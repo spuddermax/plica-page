@@ -14,6 +14,13 @@ from the fork point onward is the authoritative record; this is the summary.
 The great majority of this program is still Boomaga's work, by Alexander Sokoloff
 and the Boomaga team. Their copyright headers are intact in every file.
 
+**Version line.** PlicaPage starts at 1.0.0. Boomaga's 21 release tags
+(`v0.3.0` … `v3.0.0`) are deliberately *not* carried into this repository — its
+line already reached 3.x, and a `v1.0.0` existed there in 2013, so keeping them
+beside PlicaPage's own 1.x would be ambiguous. The full commit history is
+preserved; only the tags were dropped, and they remain in the `upstream` remote
+(`git fetch upstream --tags` if you want them).
+
 ---
 
 ## 2026-07 — Trim whitespace and scale to fit
