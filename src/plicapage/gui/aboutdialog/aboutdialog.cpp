@@ -61,7 +61,8 @@ AboutDialog::AboutDialog(QWidget *parent) :
 
     ui->thanksBrowser->setHtml(css + thanksText());
     ui->thanksBrowser->viewport()->setAutoFillBackground(false);
-    ui->thanksTab->setVisible(false);
+    // Upstream hid this tab, which meant the attribution the Icons8 licence
+    // requires was compiled in but never shown to anyone. It stays visible.
 
     ui->translationsBrowser->setHtml(css + translationsText());
     ui->translationsBrowser->viewport()->setAutoFillBackground(false);
@@ -95,13 +96,13 @@ void AboutDialog::paintEvent(QPaintEvent *)
 QString AboutDialog::titleText() const
 {
 #ifdef GIT_BRANCH
-    QString ver = QString("%1 %2 <a href='https://github.com/Boomaga/boomaga/commit/%3'>%3</a>")
+    QString ver = QString("%1 %2 <a href='https://github.com/spuddermax/plica-page/commit/%3'>%3</a>")
             .arg(FULL_VERSION, GIT_BRANCH, GIT_COMMIT_HASH);
 #else
     QString ver = QString("%1").arg(FULL_VERSION);
 #endif
     return QString("<div class=name>%1</div><div class=ver>%2</div>")
-                .arg("Boomaga")
+                .arg(APP_DISPLAY_NAME)
                 .arg(tr("Version: %1").arg(ver));
 }
 
@@ -111,15 +112,19 @@ QString AboutDialog::titleText() const
  ************************************************/
 QString AboutDialog::aboutText() const
 {
-    return  QString("<br>%1<br><br><br>%2<hr>%3<p>%4").arg(
-                tr("Boomaga provides a virtual printer for CUPS. This can be used for print preview or for print booklets."),
-                tr("Copyright: %1-%2 %3").arg("2012", QDate::currentDate().toString("yyyy"), "Boomaga team"),
+    // Two copyright lines, deliberately. Upstream's is fixed at 2019 - the year
+    // of its last release - rather than the running year, which is both accurate
+    // and keeps the credit from looking like it covers work they did not do.
+    return  QString("<br>%1<br><br>%2<br>%3<br><br>%4<hr>%5<p>%6").arg(
+                tr("%1 provides a virtual printer for CUPS. This can be used for print preview or for print booklets.")
+                    .arg(APP_DISPLAY_NAME),
 
-                tr("Homepage: %1").arg("<a href='http://boomaga.github.io'>http://boomaga.github.io</a>"),
-                tr("License: %1").arg("<a href='http://www.gnu.org/licenses/gpl-2.0.html'>GNU General Public License version 2</a>"
-                                      "and partly under the "
-                                      "<a href='http://www.gnu.org/licenses/lgpl-2.1.html'>GNU Lesser General Public License version 2.1 or later</a> "
-                                      )
+                tr("Copyright: %1-%2 %3").arg("2026", QDate::currentDate().toString("yyyy"), "PlicaPage contributors"),
+                tr("Based on Boomaga, copyright %1 %2").arg("2012-2019", "Boomaga team"),
+
+                tr("Homepage: %1").arg("<a href='https://github.com/spuddermax/plica-page'>https://github.com/spuddermax/plica-page</a>"),
+                tr("Upstream: %1").arg("<a href='https://github.com/Boomaga/boomaga'>https://github.com/Boomaga/boomaga</a>"),
+                tr("License: %1").arg("<a href='http://www.gnu.org/licenses/lgpl-2.1.html'>GNU Lesser General Public License version 2.1 or later</a>")
                 );
 }
 
@@ -129,11 +134,15 @@ QString AboutDialog::aboutText() const
  ************************************************/
 QString AboutDialog::authorsText() const
 {
-    return QString("%1<p>%2").arg(
-                tr("Boomaga is developed by the <a %1>Boomaga Team and contributors</a> on GitHub.")
-                    .arg(" href='https://github.com/Boomaga?tab=members'"),
-                tr("If you are interested in working with our development team, <a %1>join us</a>.")
-                    .arg(" href='https://github.com/Boomaga/boomaga'")
+    return QString("%1<p>%2<p>%3").arg(
+                tr("%1 is developed by <a %2>its contributors</a> on GitHub.")
+                    .arg(APP_DISPLAY_NAME, " href='https://github.com/spuddermax/plica-page/graphs/contributors'"),
+                tr("It began as a fork of <a %1>Boomaga</a>, created by Alexander Sokoloff "
+                   "and the Boomaga team, whose work the great majority of this program "
+                   "still is.")
+                    .arg(" href='https://github.com/Boomaga/boomaga'"),
+                tr("If you are interested in working with us, <a %1>join in</a>.")
+                    .arg(" href='https://github.com/spuddermax/plica-page'")
                 );
 }
 
@@ -146,9 +155,11 @@ QString AboutDialog::thanksText() const
     return QString(
                 "%1"
                 "<ul>"
+                "<li>Alexander Sokoloff and the Boomaga team "
+                "(https://github.com/Boomaga/boomaga) - the program this one is built on</li>"
                 "<li>CUPS project (http://www.cups.org)</li>"
-                "<li>FlatIcon (https://www.flaticon.com) - main icon for application</li>"
-                "<li>Icons8 (https://icons8.com/) - icons for application</li>"
+                "<li>Icons8 (https://icons8.com/) - toolbar icons, CC BY-ND 3.0</li>"
+                "<li>Poppler (https://poppler.freedesktop.org/) - PDF rendering</li>"
                 "</ul>"
                 ).arg(tr("Special thanks to:"));
 }

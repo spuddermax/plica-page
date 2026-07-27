@@ -4,25 +4,63 @@ Installation
 Prerequisites
 -------------
 
-Should you wish to build the program from the sources, you would need header files for:
+To build from source you need development headers for:
 
- * Qt5
- * cups
- * snappy
+ * Qt5      (Core, Gui, Widgets, PrintSupport, DBus, LinguistTools, Test)
+ * CUPS
  * poppler-cpp
+ * zlib
+
+plus cmake, pkg-config and a C++11 compiler. Ghostscript is a runtime
+dependency, used to convert PostScript input to PDF.
+
+Note: upstream Boomaga's INSTALL listed "snappy" as a prerequisite. It is not
+one -- the tree carries a Findsnappy.cmake that nothing ever invokes. Nor is
+poppler-qt5 needed; this program uses poppler-cpp.
+
+On Debian, Ubuntu or Linux Mint:
+
+    sudo apt install build-essential cmake pkg-config \
+                     qtbase5-dev qttools5-dev qttools5-dev-tools \
+                     libcups2-dev libpoppler-cpp-dev zlib1g-dev ghostscript
 
 
 Building and installing
 -----------------------
 
-We use so-called out-of-source builds. They support having different builds with different configurations
-simultaneously as well as easily remove the build directory if something goes wrong.
-So, create a directory in ~/boomaga, say build, and cd into it. Type
+Out-of-source builds are used, so several configurations can coexist and a
+failed build can be thrown away by deleting one directory.
 
-mkdir ~/boomaga/build
-cd ~/boomaga/build
-cmake ..
+    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+    cmake --build build -j$(nproc)
+    sudo cmake --install build
 
-For more information, see https://github.com/Boomaga/boomaga/wiki/Instalation-from-sources page.
+The /usr prefix is deliberate. The CUPS backend prepends GUI_DIR to PATH and
+then launches the GUI by name, so a build installed to the default /usr/local
+alongside another copy in /usr would end up launching the wrong binary.
+
+To build and run the test suite:
+
+    cmake -S . -B build -DBUILD_TESTS=Yes
+    cmake --build build -j$(nproc)
+    ./build/src/plicapage/tests/plicapage_test
+
+The tests are headless and need no display.
 
 
+Registering the printer
+-----------------------
+
+    sudo ./scripts/installPrinter.sh
+
+This creates a CUPS queue named PlicaPage on the plicapage:/ backend. It does
+not touch any existing queue, including a Boomaga one.
+
+
+Installing next to Boomaga
+--------------------------
+
+PlicaPage is designed to coexist with a stock Boomaga install: the two share no
+binary name, backend, URI scheme, PPD, D-Bus name, spool directory, settings
+file or installed path. Both queues can be present at once, and printing to
+each is how you compare them.

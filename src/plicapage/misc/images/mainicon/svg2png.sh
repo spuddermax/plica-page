@@ -1,27 +1,24 @@
 #!/bin/bash
+# Regenerate the icon raster set from plicapage.svg.
+#
+# Uses rsvg-convert rather than Inkscape: the old script was written for
+# Inkscape 0.x, whose -z/-e flags were removed in 1.0, so it silently produced
+# nothing on a modern system.
+set -e
 
 PNG_NAME=plicapage
 SVG_FILE=plicapage.svg
 
+render() { rsvg-convert -w "$1" -h "$1" -o "$2" "${SVG_FILE}"; }
 
-inkscape -z -e ${PNG_NAME}-16x16.png   -w  16 -h  16 ${SVG_FILE}
-inkscape -z -e ${PNG_NAME}-32x32.png   -w  32 -h  32 ${SVG_FILE}
-inkscape -z -e ${PNG_NAME}-48x48.png   -w  48 -h  48 ${SVG_FILE}
-inkscape -z -e ${PNG_NAME}-64x64.png   -w  64 -h  64 ${SVG_FILE}
-inkscape -z -e ${PNG_NAME}-128x128.png -w 128 -h 128 ${SVG_FILE}
-inkscape -z -e ${PNG_NAME}-256x256.png -w 256 -h 256 ${SVG_FILE}
-inkscape -z -e ${PNG_NAME}-512x512.png -w 512 -h 512 ${SVG_FILE}
+for size in 16 32 48 64 128 256 512; do
+    render ${size} ${PNG_NAME}-${size}x${size}.png
+done
 
 mkdir -p ${PNG_NAME}.iconset
-inkscape -z -e ${PNG_NAME}.iconset/icon_512x512.png -w 512 -h 512 ${SVG_FILE}
-inkscape -z -e ${PNG_NAME}.iconset/icon_256x256.png -w 256 -h 256 ${SVG_FILE}
-inkscape -z -e ${PNG_NAME}.iconset/icon_128x128.png -w 128 -h 128 ${SVG_FILE}
-inkscape -z -e ${PNG_NAME}.iconset/icon_32x32.png   -w  32 -h  32 ${SVG_FILE}
-inkscape -z -e ${PNG_NAME}.iconset/icon_16x16.png   -w  16 -h  16 ${SVG_FILE}
+for size in 16 32 128 256 512; do
+    render ${size}          ${PNG_NAME}.iconset/icon_${size}x${size}.png
+    render $((size * 2))    ${PNG_NAME}.iconset/icon_${size}x${size}@2x.png
+done
 
-inkscape -z -e ${PNG_NAME}.iconset/icon_512x512@2x.png -w 1024 -h 1024 ${SVG_FILE}
-inkscape -z -e ${PNG_NAME}.iconset/icon_256x256@2x.png -w  512 -h  512 ${SVG_FILE}
-inkscape -z -e ${PNG_NAME}.iconset/icon_128x128@2x.png -w  256 -h  256 ${SVG_FILE}
-inkscape -z -e ${PNG_NAME}.iconset/icon_32x32@2x.png   -w   64 -h   64 ${SVG_FILE}
-inkscape -z -e ${PNG_NAME}.iconset/icon_16x16@2x.png   -w   32 -h   32 ${SVG_FILE}
-
+echo "Regenerated $(ls -1 ${PNG_NAME}-*.png ${PNG_NAME}.iconset/*.png | wc -l) files."

@@ -18,9 +18,9 @@
 *FileVersion:	"1.1"
 *LanguageVersion: English 
 *LanguageEncoding: ISOLatin1
-*PCFileName:	"PDF.PPD"
+*PCFileName:	"PLICA.PPD"
 *Manufacturer:	"@CUPS_BACKEND_MANUFACTURER@"
-*Product:       "(Generic PDF Printer)"
+*Product:       "(@CUPS_BACKEND_MODEL@)"
 *cupsVersion:	1.0
 *cupsManualCopies: True
 *cupsModelNumber:  2

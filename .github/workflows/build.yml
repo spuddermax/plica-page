@@ -1,0 +1,56 @@
+name: build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+        build_type: [Debug, Release]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake pkg-config \
+            qtbase5-dev qttools5-dev qttools5-dev-tools \
+            libcups2-dev libpoppler-cpp-dev zlib1g-dev \
+            ghostscript
+
+      - name: Configure
+        env:
+          CC:  ${{ matrix.compiler == 'clang' && 'clang' || 'gcc' }}
+          CXX: ${{ matrix.compiler == 'clang' && 'clang++' || 'g++' }}
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DBUILD_TESTS=Yes
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      # QTEST_GUILESS_MAIN, so no display is needed. Ghostscript is required by
+      # the PostScript input tests.
+      - name: Test
+        run: ./build/src/plicapage/tests/plicapage_test
+
+      - name: Check install has no stray paths
+        run: |
+          cmake --install build --prefix "$PWD/staging" > /dev/null
+          find staging -type f | sort
+
+  licence-headers:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      # Every .cpp/.h must carry an LGPL2+/BSD-compatible copyright header.
+      # Upstream's script only printed colours and never failed; this enforces it.
+      - name: Check copyright headers
+        run: ./scripts/checkLicense.sh

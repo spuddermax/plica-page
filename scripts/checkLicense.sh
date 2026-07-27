@@ -25,72 +25,63 @@
 #
 # END_COMMON_COPYRIGHT_HEADER
 
-#ALL=''
-#ONLY_ERRORS=1
-COLOR='YES'
+# Verifies that every C++ source file carries a licence marker compatible with
+# the project: BSD 3-Clause, or LGPL v2.1 or later.
+#
+# Exits non-zero when a file is non-compliant, so it can gate CI. Upstream's
+# version only printed colours and always succeeded, which meant a file could
+# lose its copyright header without anyone noticing.
+#
+#   ./scripts/checkLicense.sh [dir]      # defaults to the whole repository
+#   ALL=1 ./scripts/checkLicense.sh      # also list the compliant files
 
-SEARCH="${SEARCH:-searchGit}"
-DIR="${1:-../}"
+set -u
 
-if [ -n "$COLOR" ]; then
+DIR="${1:-$(git rev-parse --show-toplevel 2>/dev/null || echo .)}"
+
+if [ -t 1 ]; then
     RED='\E[0;31m'
-    YELLOW='\E[0;33m'
     GREEN='\e[0;32m'
-    NORM='\E[0;37;40m'
+    NORM='\E[0m'
     RED_BG='\E[41m'
+else
+    RED=''; GREEN=''; NORM=''; RED_BG=''
 fi
 
+failed=0
+checked=0
 
-#let 'invlid=0'
-#let 'lgplCnt=0'
-#let 'gplCnt=0'
-#let 'unknownCnt=0'
+# git ls-files keeps generated build trees out of the results.
+while read -r file; do
+    [ -f "$file" ] || continue
+    checked=$((checked + 1))
 
-searchAll()
-{
-    find ${DIR} -type f \( -name '*.h' -o -name '*.cpp' \)  2>/dev/null
-}
-
-searchGit()
-{
-    git ls-files -- "${DIR}" | grep -E '(*\.cpp|*\.h)$'
-}
-
-# License compatibility: BSD 3-Clause; LGPL v2.1 or later
-
-$SEARCH | while read file; do
-    license=`head -n 5 "$file"| grep '(c)' | sed -e 's/*//'`;# | sed -e 's/\([()]\)/\\1/g'`;
+    license=$(head -n 5 "$file" | grep '(c)' | sed -e 's/*//' -e 's/^[[:space:]]*//')
 
     case "$license" in
-        *LGPL2+*|*DWTFYW*|*BSD*)
-            [ -z "$ALL" ] && continue
-            color=$GREEN
+        *LGPL2+*|*LGPL3+*|*DWTFYW*|*BSD*)
+            [ -n "${ALL:-}" ] && printf "${GREEN}%-20s %s${NORM}\n" "$license" "$file"
+            continue
             ;;
 
-        *LGPL3+*)
-            color=$GREEN
-            ;;
-
-        *LGPL2*|*LGPL3*)
-            [ -n "$ONLY_ERRORS" ] && continue
-            color=$YELLOW
-            ;;
-
-        *GPL2*|*GPL3*)
-            [ -n "$ONLY_ERRORS" ] && continue
-            color=$RED
+        *GPL2*|*GPL3*|*LGPL2*|*LGPL3*)
+            colour=$RED
             ;;
 
         *)
-            color=$RED_BG
-            [ -z "$license" ] && license='  Not set'
+            colour=$RED_BG
+            [ -z "$license" ] && license='Not set'
             ;;
     esac
 
-    let "div = 20 - ${#license}"
-    printf "${color}%-20s %s${NORM}\n"  "${license}" "$file"
-done
-#echo
-#echo "LGPL:    $lgplCnt"
-#echo "GPL:     $gplCnt"
-#echo "Unknown: $unknownCnt"
+    printf "${colour}%-20s %s${NORM}\n" "$license" "$file"
+    failed=$((failed + 1))
+done < <(git ls-files -- "${DIR}" | grep -E '\.(cpp|h)$')
+
+if [ "$failed" -gt 0 ]; then
+    echo
+    echo "${failed} of ${checked} files have a missing or incompatible licence header."
+    exit 1
+fi
+
+echo "All ${checked} C++ files carry a compatible licence header."

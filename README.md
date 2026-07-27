@@ -1,110 +1,112 @@
-Boomaga      &nbsp;   ![Release](http://www.boomaga.org/badge_release.svg)      &nbsp;  [![Build Status](https://travis-ci.org/Boomaga/boomaga.svg?branch=master)](https://travis-ci.org/Boomaga/boomaga)      &nbsp;  [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XVRVWTQL5WERG)
-======
+# PlicaPage
 
-[Homepage](http://www.boomaga.org) | 
-[Screenshots](http://www.boomaga.org/screenshots/) | 
-[Download](http://www.boomaga.org/download/)
+A virtual printer for CUPS. Print to it from any application and, instead of
+paper, you get a preview window where you can rearrange, combine and impose the
+document before it reaches a real printer.
 
+*Plica* is Latin for a fold — which is most of what this program does to a page.
 
-*Unfortunately I don't have enough time to support this project.  
-Excuse me!*
+---
 
+## What it does
 
+Print to the **PlicaPage** queue from any application and its window opens with
+the document loaded. From there you can:
 
-About the program
-=================
+- **Trim whitespace.** Detect the ink on each page, throw away the blank margins
+  and scale what remains to fill the sheet. On a wide-margined PDF printed 4-up
+  this is the difference between readable and not.
+- **Impose** 1, 2, 4 or 8 pages per sheet, or fold the document into a booklet.
+- **Print both sides** on a printer without a duplexer — it will tell you when to
+  turn the stack over.
+- **Combine documents.** Print a second document and it is appended to the first,
+  so several sources can go out as one job.
+- **Reorder, rotate and hide** individual pages before printing.
+- **Export to PDF** instead of printing.
 
-Boomaga (**BOO**klet **MA**nager) is a virtual printer for viewing a document before printing it out using the
-physical printer.
+Lengths are shown in millimetres or inches, following your locale by default and
+switchable in Preferences.
 
-The program is very simple to work with. Running any program, click “print” and select “Boomaga” to
-see in several seconds (CUPS takes some time to respond) the Boomaga window open. If you print out
-one more document, it gets added to the previous one, and you can also print them out as one.
+## Relationship to Boomaga
 
-Regardless of whether your printer supports duplex printing or not, you would be able to easily print on
-both sides of the sheet. If your printer does not support duplex printing, point this out in the settings,
-and Booklet would ask you to turn over the pages half way through printing your document.
+PlicaPage is a fork of [Boomaga](https://github.com/Boomaga/boomaga) by Alexander
+Sokoloff and the Boomaga team, taken at commit `7f7ad47` (2022-02-21) — the last
+commit upstream made. Boomaga's README carries the maintainer's own note that he
+no longer has time for the project.
 
-The program can also help you get your documents prepared a bit before printing. At this stage
-Boomaga makes it possible to:
-* Paste several documents together.
-* Print several pages on one sheet.
-    * 1, 2, 4, 8 pages per sheet
-    * Booklet. Folding the sheets in two, you’ll get a book.
+**The great majority of this program is still their work**, and their copyright
+headers are intact in every file. What changed is recorded in
+[CHANGES-FROM-UPSTREAM.md](CHANGES-FROM-UPSTREAM.md).
 
-Boomaga is an open source project distributed under the GPLv2 license (some files are distributed
-under the LGPLv2+ license). It would be more convenient to install the program from the package for your
-distribution; you can access the list of the packages at [our site](https://github.com/Boomaga/boomaga); installation guide for Ubuntu-based distros is avabilable [here](https://github.com/Boomaga/boomaga/wiki/How-to-Install-Boomaga-in-LinuxMint-or-Ubuntu). You can also build the program from the sources; you can download the sources of the latest stable version [here](https://github.com/Boomaga/boomaga/archive/master.zip). 
-The version for developers is available on our page at [GitHub](https://github.com/Boomaga/boomaga).
+PlicaPage is built to install **alongside** a stock Boomaga package rather than
+replace it, so you can print the same document to both queues and compare. The
+two share no backend, D-Bus name, spool directory, settings file or installed
+path.
 
-Address your preferences and error messages to our [Issue tracker](https://github.com/Boomaga/boomaga/issues).
+Files saved by Boomaga (`*.boo`) still open. PlicaPage saves its own projects as
+`*.plica` so the two do not fight over the file association.
 
+## How it works
 
-Why you may need it?
-====================
+CUPS hands the print job to `/usr/lib/cups/backend/plicapage`, which runs as root,
+writes the job into `/var/cache/plicapage/<user>/`, drops to the printing user and
+asks the GUI to pick it up over D-Bus (starting it if it is not already running).
+Pages are rendered with [poppler](https://poppler.freedesktop.org/); Ghostscript
+is used only to convert PostScript input to PDF.
 
-Instance 1
-----------
+## Installing
 
-Think of all the times you were getting on paper something different than you expected. You may once
-have forgotten to give the number of pages in the print box, or a document from your office program
-did not fit the sheet. Boomaga makes possible previewing before actual printing to see the real way the
-final version would look like.
+### Build dependencies
 
-Instance 2
-----------
+On Debian/Ubuntu/Mint:
 
-Let’s say you wish to print out and read a few documents in peace and quiet. The conventional printout
-produces several A4 sheaves. They are awkward to read and store. Boomaga gets you one compact A5
-booklet. It is more convenient to read than the A4 format and it fits snugly into a bookshelf and takes
-much less paper.
+```bash
+sudo apt install build-essential cmake pkg-config \
+                 qtbase5-dev qttools5-dev qttools5-dev-tools \
+                 libcups2-dev libpoppler-cpp-dev zlib1g-dev ghostscript
+```
 
-Instance 3 (Don't try this at home)
------------------------------------
+### Build and install
 
-You have an exam to take and you feel like you are all at sea. Boomaga offers a layout of 8 pages per
-sheet (8Up) enabling you to print crib notes for your upcoming exam.
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+cmake --build build -j$(nproc)
+sudo cmake --install build
+```
 
-  **Disclaimer**
-  The program developers give no guarantees and decline all responsibility for your failure or
-  success.
+`/usr` matters: the CUPS backend prepends `GUI_DIR` to `PATH` and launches the GUI
+by name, so installing to the default `/usr/local` while another build sits in
+`/usr` would launch the wrong one.
 
-How it Works
-============
+### Register the printer
 
-Boomaga is comprised of a backend for CUPS, and a graphic program for the viewing and editing of
-documents.
+```bash
+sudo ./scripts/installPrinter.sh
+```
 
-A document printed out with Boomaga gets into CUPS. CUPS creates a PostScript file and passes it on
-to the backend. In this instance this is a backend for Boomaga. The backend seeks out an active session
-for the user who sends the document for getting printed. Via the D-Bus, it subsequently triggers the GUI
-part of Boomaga (unless it already runs) and communicates to it the name of the PostScript file. GUI
-scans the PostScript file and displays its content. Used for this purpose is the Ghostscript library.
+Or add it by hand in your printer settings: choose the local printer
+**PlicaPage (Virtual PlicaPage printer)** and the `plicapage.ppd` driver.
 
-Nothing works!
-==============
+### Running the tests
 
-Our backend-е for CUPS uses a search for user session; it is yet to be completely debugged and may
-not work in some environments. Please, look through the error messages in CUPS logs, and send in
-discovered bugs to [Issue tracker](https://github.com/Boomaga/boomaga/issues), or contact the developers.
+```bash
+cmake -S . -B build -DBUILD_TESTS=Yes
+cmake --build build -j$(nproc)
+./build/src/plicapage/tests/plicapage_test
+```
 
+They run headless; no display required.
 
-Installation
-===========
+## Known quirks
 
-One simple solution is to install the program from the package manager of your distribution. Installation guide for Ubuntu-based distros is avabilable [here](https://github.com/Boomaga/boomaga/wiki/How-to-Install-Boomaga-in-LinuxMint-or-Ubuntu).
+- Each app lists the other's queue as a printable target, because the printer
+  list only filters out its *own* backend URI. Handy for comparing the two,
+  but it does mean you can round-trip a job through both by accident.
+- The CUPS backend finds the user's session bus by scanning `/proc`. It is
+  effective but not elegant, and inherited from upstream — if the window does
+  not appear after printing, that is the first place to look.
 
-Should you wish to build the program from the sources, please refer to [INSTALL.txt](INSTALL.txt) for more information.
+## Licence
 
-
-Installing the printer
-======================
-
-Once the program has been installed, it’s time to add the virtual printer. Please note that this has to be
-done only once. You don’t have to install the printer over again when updating the program.
-
-The best solution is to use the `scripts/installPrinter.sh` from sources tree– just run it.
-
-If you wish to install the printer on your own, select "_Local Printers: Boomaga (Virtual boomaga printer)_" in the "create printer" dialogue and indicate the type, "_Generic Virtual boomaga printer_" or, if you can’t access the previous, select the "_build/cups/boomaga.ppd_" PPD file.
-
-For more information, see https://github.com/Boomaga/boomaga/wiki/Instalation-from-sources#installing-the-printer page.
+LGPL-2.1-or-later. See [COPYING](COPYING) for the full picture, including the
+GPL-licensed PPD and third-party assets.

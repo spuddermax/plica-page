@@ -1,48 +1,46 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
-<!-- Generator: Adobe Illustrator 19.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 509.287 509.287" style="enable-background:new 0 0 509.287 509.287;" xml:space="preserve">
-<circle style="fill:#4B5AA7;" cx="254.644" cy="254.644" r="254.644"/>
-<polygon style="fill:#DEDEDF;" points="435.03,149.531 74.257,149.531 47.131,207.852 462.156,207.852 "/>
-<rect x="47.131" y="207.852" style="fill:#BDBDBE;" width="414.686" height="159.364"/>
-<rect x="112.233" y="100.026" style="fill:#4F5565;" width="286.517" height="75.952"/>
-<rect x="107.825" y="304.487" style="fill:#333842;" width="293.298" height="32.551"/>
-<rect x="135.968" y="47.809" style="fill:#FCFCFD;" width="238.707" height="127.83"/>
-<rect x="107.825" y="337.038" style="fill:#4F5565;" width="293.298" height="54.591"/>
-<rect x="134.951" y="320.763" style="fill:#F1F3F7;" width="238.707" height="106.469"/>
-<circle style="fill:#F0582F;" cx="406.887" cy="250.914" r="15.597"/>
-<g>
-	<rect x="165.468" y="347.211" style="fill:#6EB1E1;" width="178.352" height="13.563"/>
-	<rect x="165.468" y="387.56" style="fill:#6EB1E1;" width="178.352" height="13.563"/>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
-<g>
-</g>
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    PlicaPage application icon.
+
+    "Plica" is Latin for a fold: the mark is a sheet folded down the middle into
+    a booklet, which is what the program does to a document.
+
+    Original work, created for PlicaPage and licensed under the same terms as the
+    rest of the project (LGPL-2.1-or-later). It deliberately shares no material
+    with the upstream Boomaga icon, whose stock licence does not permit
+    redistribution in a source repository.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2F8F79"/>
+      <stop offset="1" stop-color="#1F6355"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#D3E0DD"/>
+      <stop offset="1" stop-color="#FFFFFF"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="512" height="512" rx="112" ry="112" fill="url(#bg)"/>
+
+  <!-- The two leaves of the folded sheet, meeting at the spine. -->
+  <g>
+    <!-- left leaf, turned slightly away so the fold reads as a fold -->
+    <path d="M 96 176 L 246 140 L 246 372 L 96 336 Z" fill="url(#leaf)"/>
+    <!-- right leaf -->
+    <path d="M 266 140 L 416 176 L 416 336 L 266 372 Z" fill="#FFFFFF"/>
+    <!-- the fold itself -->
+    <rect x="246" y="140" width="20" height="232" fill="#9FB8B2"/>
+  </g>
+
+  <!-- Ruled lines, kept few and heavy so they survive at 16px. -->
+  <g fill="#8FA8A2">
+    <rect x="126" y="212" width="96" height="14" rx="7"/>
+    <rect x="126" y="252" width="96" height="14" rx="7"/>
+    <rect x="126" y="292" width="70" height="14" rx="7"/>
+    <rect x="290" y="196" width="96" height="14" rx="7"/>
+    <rect x="290" y="236" width="96" height="14" rx="7"/>
+    <rect x="290" y="276" width="70" height="14" rx="7"/>
+  </g>
 </svg>

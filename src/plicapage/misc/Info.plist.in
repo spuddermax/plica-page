@@ -46,8 +46,10 @@
 		</dict>
 	</array>
 
-	<key>SUFeedURL</key>
-	<string>https://www.plicapage.org/download/feed.xml</string>
+	<!-- No SUFeedURL. Upstream pointed Sparkle at boomaga.org; leaving that in
+	     would auto-update PlicaPage into Boomaga, and pointing it at a domain
+	     this project does not own would be worse. Restore this only alongside a
+	     real, controlled appcast. -->
 
 </dict>
 </plist>

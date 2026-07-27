@@ -1,8 +1,34 @@
+PlicaPage
+=========
+
+PlicaPage is a fork of Boomaga (https://github.com/Boomaga/boomaga), taken at
+commit 7f7ad47 (v3.0.0-13-g7f7ad47, 2022-02-21).
+
 Upstream Author:
      Boomaga team: https://github.com/Boomaga
+     Alexander Sokoloff <sokoloff.a@gmail.com>
 
 Copyright:
-    Copyright (C) 2012-2013 Boomaga team
+    Copyright (C) 2012-2019 Boomaga team
+    Copyright (C) 2026 PlicaPage contributors
 
-License: GPL-2 and LGPL-2.1+
- The full text of the licenses can be found in the 'GPL' and 'LGPL' files.
+License: LGPL-2.1+
+ Every source file in this project carries an LGPL-2.1-or-later header. The
+ full text of the licence is in the 'LGPL' file.
+
+ The 'GPL' file is retained because the CUPS PPD template
+ (src/backend/cups_backend/plicapage.ppd) is derived from the OpenPrinting
+ CUPS-Filters generic PDF PPD and is published under the GNU General Public
+ License. Upstream's COPYING described the project as "GPL-2 and LGPL-2.1+"
+ for this reason.
+
+Third-party material:
+    src/plicapage/misc/images/icons/       Icons8, CC BY-ND 3.0 (see AUTHORS.md)
+    src/plicapage/cmake/Findsnappy.cmake   Copyright (c) 2012 Louis Dionne,
+                                           Apache License 2.0
+    cmake/git_version.cmake                from Flacon (https://github.com/flacon/flacon)
+    cmake/macos.cmake                      from Flacon
+
+ The application icon (src/plicapage/misc/images/mainicon/) is original work
+ created for PlicaPage; see its AUTHORS.md for why it is not inherited from
+ upstream.

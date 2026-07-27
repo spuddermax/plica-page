@@ -1401,13 +1401,15 @@ void MainWindow::saveAs(const QString &fileName)
         file = QFileDialog::getSaveFileName(
                     this, this->windowTitle(),
                     settings->value(Settings::SaveDir).toString(),
-                    tr("PlicaPage files (*.boo);;All files (*.*)"));
+                    tr("PlicaPage files (*.plica);;All files (*.*)"));
 
         if (file.isEmpty())
             return;
 
-        if (QFileInfo(file).suffix().toLower() != "boo")
-            file += ".boo";
+        // Accept a .boo the user typed deliberately, but default to our own.
+        QString suffix = QFileInfo(file).suffix().toLower();
+        if (suffix != "plica" && suffix != "boo")
+            file += ".plica";
     }
 
     mSaveFile = file;
@@ -1460,7 +1462,7 @@ void MainWindow::load()
     QFileDialog dialog(
                 this, this->windowTitle(),
                 settings->value(Settings::SaveDir).toString(),
-                tr("All supported files (*.pdf *.boo);;PlicaPage files (*.boo);;PDF files (*.pdf);;All files (*.*)"));
+                tr("All supported files (*.pdf *.plica *.boo);;PlicaPage files (*.plica);;Boomaga files (*.boo);;PDF files (*.pdf);;All files (*.*)"));
 
     dialog.setFileMode(QFileDialog::ExistingFiles);
     dialog.selectNameFilter(settings->value(Settings::MainWindow_OpenFileFilter).toString());
@@ -1538,7 +1540,7 @@ void MainWindow::saveAuto()
         return;
     }
 
-    QString file = QString("[%1]-%2.boo")
+    QString file = QString("[%1]-%2.plica")
             .arg(QDateTime::currentDateTime().toString("yyyy.MM.dd-hh:mm:ss"))
             .arg(safeFileName(safeFileName(project->jobs()->first().title(true))));
 

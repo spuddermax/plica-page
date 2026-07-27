@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string> About Boomaga</string>
+   <string> About PlicaPage</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
@@ -50,7 +50,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string notr="true">&lt;h1&gt;Boomaga&lt;/h1&gt;&lt;p&gt;Version: %1&lt;/p&gt;</string>
+        <string notr="true">&lt;h1&gt;PlicaPage&lt;/h1&gt;&lt;p&gt;Version: %1&lt;/p&gt;</string>
        </property>
       </widget>
      </item>
