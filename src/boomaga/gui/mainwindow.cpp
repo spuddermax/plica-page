@@ -144,6 +144,20 @@ MainWindow::MainWindow(QWidget *parent):
     connect(ui->doubleSidedCbx, SIGNAL(clicked(bool)),
             project, SLOT(setDoubleSided(bool)));
 
+    // clicked(), not toggled()/valueChanged(): these widgets are also written
+    // to by updateTrimWidgets(), and only a real click should drive a re-render.
+    connect(ui->trimBox, SIGNAL(clicked(bool)),
+            project, SLOT(setTrimWhitespace(bool)));
+
+    connect(ui->trimPerPageBtn, SIGNAL(clicked()),
+            this, SLOT(switchTrimMode()));
+
+    connect(ui->trimUniformBtn, SIGNAL(clicked()),
+            this, SLOT(switchTrimMode()));
+
+    connect(ui->trimPaddingSpin, SIGNAL(editingFinished()),
+            this, SLOT(trimPaddingChanged()));
+
     connect(ui->jobsView, SIGNAL(pageSelected(int)),
             project, SLOT(setCurrentPage(int)));
 
@@ -302,6 +316,12 @@ void MainWindow::loadSettings()
 
     project->setDoubleSided(settings->value(Settings::DoubleSided).toBool());
 
+    // Padding before the toggle: setTrimWhitespace() is what triggers the
+    // re-render, so the padding it renders with should already be correct.
+    project->setTrimPadding(settings->value(Settings::TrimPadding).toDouble());
+    project->setTrimUniform(settings->value(Settings::TrimUniform).toBool());
+    project->setTrimWhitespace(settings->value(Settings::TrimWhitespace).toBool());
+
     ui->jobsView->setIconSize(settings->value(Settings::MainWindow_PageListIconSize).toInt());
     ui->subBookletView->setIconSize(settings->value(Settings::MainWindow_PageListIconSize).toInt());
 }
@@ -323,6 +343,10 @@ void MainWindow::saveSettings()
 
     settings->setValue(Settings::Layout, project->layout()->id());
     settings->setValue(Settings::DoubleSided, project->doubleSided());
+
+    settings->setValue(Settings::TrimWhitespace, project->trimWhitespace());
+    settings->setValue(Settings::TrimUniform, project->trimUniform());
+    settings->setValue(Settings::TrimPadding, project->trimPadding());
 
 
     if (project->printer() != Printer::nullPrinter())
@@ -466,6 +490,8 @@ void MainWindow::updateWidgets()
         ui->doubleSidedCbx->setEnabled(true);
     }
 
+    updateTrimWidgets();
+
     // Update status bar ..........................
     if (project->pageCount())
     {
@@ -552,6 +578,48 @@ void MainWindow::switchPrinterProfile()
 {
     project->setPrinterProfile(ui->printersCombo->currentPrinter(),
                                ui->printersCombo->currentProfile());
+}
+
+
+/************************************************
+
+ ************************************************/
+void MainWindow::switchTrimMode()
+{
+    project->setTrimUniform(ui->trimUniformBtn->isChecked());
+}
+
+
+/************************************************
+
+ ************************************************/
+void MainWindow::trimPaddingChanged()
+{
+    project->setTrimPadding(fromUnit(ui->trimPaddingSpin->value(), currentUnit()));
+}
+
+
+/************************************************
+ * Pushes the project state onto the trim widgets, and relabels the padding
+ * spinbox for whatever unit is currently selected in the preferences.
+ ************************************************/
+void MainWindow::updateTrimWidgets()
+{
+    const Unit unit = currentUnit();
+
+    ui->trimBox->setChecked(project->trimWhitespace());
+    ui->trimPerPageBtn->setChecked(!project->trimUniform());
+    ui->trimUniformBtn->setChecked(project->trimUniform());
+
+    // setValue() would otherwise fight the user mid-edit and re-enter through
+    // editingFinished().
+    ui->trimPaddingSpin->blockSignals(true);
+    ui->trimPaddingSpin->setDecimals(unitDecimals(unit));
+    ui->trimPaddingSpin->setSingleStep(unitStep(unit));
+    ui->trimPaddingSpin->setMaximum(unitMax(unit));
+    ui->trimPaddingSpin->setSuffix(" " + unitSuffix(unit));
+    ui->trimPaddingSpin->setValue(toUnit(project->trimPadding(), unit));
+    ui->trimPaddingSpin->blockSignals(false);
 }
 
 

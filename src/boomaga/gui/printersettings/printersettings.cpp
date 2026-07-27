@@ -29,6 +29,7 @@
 #include <QStandardItem>
 #include <QPainter>
 #include <QDebug>
+#include <QDoubleSpinBox>
 #include <QMessageBox>
 #include "settings.h"
 
@@ -96,12 +97,16 @@ PrinterSettings::PrinterSettings(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::PrinterSettings),
     mPrinter(nullptr),
-    mUnit(UnitMillimeter)
+    mUnit(currentUnit())
 {
     setAttribute(Qt::WA_DeleteOnClose);
 
     ui->setupUi(this);
     ui->profilesList->setModel(new QStandardItemModel(this));
+
+    // Must run before the AllowNegativeMargins block below, which derives each
+    // minimum from the maximum that applyUnits() has just set.
+    applyUnits();
 
     if (settings->value(Settings::AllowNegativeMargins).toBool())
     {
@@ -412,6 +417,31 @@ void PrinterSettings::resetToDefault()
     profile->setRightMargin(   defaultCupsProfile->rightMargin(mUnit),    mUnit);
     profile->setInternalMargin(defaultCupsProfile->internalMargin(mUnit), mUnit);
     updateWidgets();
+}
+
+
+/************************************************
+
+ ************************************************/
+void PrinterSettings::applyUnits()
+{
+    const QString suffix = " " + unitSuffix(mUnit);
+
+    QList<QDoubleSpinBox*> spins;
+    spins << ui->leftMarginSpin  << ui->rightMarginSpin << ui->topMarginSpin
+          << ui->bottomMarginSpin << ui->internalMarginSpin;
+
+    foreach (QDoubleSpinBox *spin, spins)
+    {
+        spin->setDecimals(unitDecimals(mUnit));
+        spin->setSingleStep(unitStep(mUnit));
+        spin->setMaximum(unitMax(mUnit));
+        spin->setSuffix(suffix);
+    }
+
+    ui->tabWidget->setTabText(ui->tabWidget->indexOf(ui->MarginsTab),
+                              tr("Margins (%1)", "Printer settings tab title. %1 is a unit name, e.g. mm")
+                              .arg(unitSuffix(mUnit)));
 }
 
 

@@ -27,6 +27,7 @@
 #include "settings.h"
 #include <QDir>
 #include <QDebug>
+#include <QLocale>
 #include <QStandardPaths>
 
 
@@ -37,6 +38,16 @@
 
 
 QString Settings::mFileName;
+
+/************************************************
+ * Declared in boomagatypes.h, defined here so the unit helpers themselves
+ * stay free of any dependency on Settings.
+ ************************************************/
+Unit currentUnit()
+{
+    return strToUnit(settings->value(Settings::Units).toString());
+}
+
 
 /************************************************
 
@@ -114,6 +125,11 @@ QString Settings::keyToString(Settings::Key key) const
     case AutoSaveDir:                   return "Project/AutoSaveDir";
     case RecentFiles:                   return "Project/RecentFiles";
     case RightToLeft:                   return "Project/RightToLeft";
+    case Units:                         return "Project/Units";
+
+    case TrimWhitespace:                return "Project/TrimWhitespace";
+    case TrimUniform:                   return "Project/TrimUniform";
+    case TrimPadding:                   return "Project/TrimPadding";
 
     // Preferences **************************
     case Preferences_Geometry:          return "Preferences/Geometry";
@@ -178,6 +194,17 @@ void Settings::init()
     setDefaultValue(AllowNegativeMargins, false);
     setDefaultValue(AutoSave, false);
     setDefaultValue(RightToLeft, qApp->layoutDirection() == Qt::RightToLeft);
+
+    // Follow the locale, the same way RightToLeft follows the layout direction.
+    setDefaultValue(Units, unitToStr(
+                        QLocale::system().measurementSystem() == QLocale::MetricSystem
+                        ? UnitMillimeter
+                        : UnitInch));
+
+    setDefaultValue(TrimWhitespace, false);
+    setDefaultValue(TrimUniform, false);
+    // Lengths are always stored in points, never in the display unit.
+    setDefaultValue(TrimPadding, fromUnit(2.0, UnitMillimeter));
 
     QString dir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     dir = shrinkHomeDir(dir);

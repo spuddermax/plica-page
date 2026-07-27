@@ -76,6 +76,7 @@ private:
     Unit mUnit;
 
     void applyUpdates();
+    void applyUnits();
     ProfileItem *currentItem() const;
     PrinterProfile *currentProfile() const;
 };

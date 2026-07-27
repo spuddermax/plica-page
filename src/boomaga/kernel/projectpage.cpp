@@ -81,6 +81,34 @@ QRectF ProjectPage::rect() const
 
 
 /************************************************
+ *
+ * ***********************************************/
+QRectF ProjectPage::trimRect() const
+{
+    const QRectF pageRect = rect();
+
+    if (!project->trimWhitespace())
+        return pageRect;
+
+    const QRectF ink = project->trimUniform() ? project->uniformInkBox()
+                                              : mInkBox;
+
+    // A blank page, or one that has not been scanned yet, is left alone.
+    if (!ink.isValid() || ink.isEmpty())
+        return pageRect;
+
+    const qreal padding = project->trimPadding();
+    QRectF res = ink.adjusted(-padding, -padding, padding, padding);
+
+    // Padding must not reach outside the page: there is nothing out there to
+    // show, and in uniform mode the shared box may be bigger than this page.
+    res = res.intersected(pageRect);
+
+    return res.isEmpty() ? pageRect : res;
+}
+
+
+/************************************************
 
  ************************************************/
 Rotation ProjectPage::pdfRotation() const
@@ -138,6 +166,7 @@ ProjectPage *ProjectPage::clone(QObject *parent)
     ProjectPage *res = new ProjectPage(parent);
     res->mJobPageNum = mJobPageNum;
     res->mPdfInfo = mPdfInfo;
+    res->mInkBox = mInkBox;
     res->setVisible(mVisible);
     res->setManualRotation(mManualRotation);
     res->setManualStartSubBooklet(mManualStartSubBooklet);

@@ -135,6 +135,17 @@ public:
     const Layout *layout() const { return mLayout; }
     bool doubleSided() const;
 
+    bool trimWhitespace() const { return mTrimWhitespace; }
+    bool trimUniform() const { return mTrimUniform; }
+    /// Padding left around the trimmed content, in points.
+    qreal trimPadding() const { return mTrimPadding; }
+
+    /**
+     * The union of every page's ink box, used when all pages are to share one
+     * crop so that type stays the same size throughout the document.
+     */
+    QRectF uniformInkBox() const { return mUniformInkBox; }
+
     Printer *printer() const { return mPrinter; }
     void setPrinterProfile(Printer *printer, int profile, bool update = true);
 
@@ -193,6 +204,9 @@ public slots:
     void moveJob(int from, int to);
     void setLayout(const Layout *layout);
     void setDoubleSided(bool value);
+    void setTrimWhitespace(bool value);
+    void setTrimUniform(bool value);
+    void setTrimPadding(qreal points);
     void update();
 
 
@@ -232,11 +246,18 @@ private:
     Printer *mPrinter;
     bool mDoubleSided;
 
+    bool mTrimWhitespace;
+    bool mTrimUniform;
+    qreal mTrimPadding;
+    bool mInkBoxesReady;
+    QRectF mUniformInkBox;
+
     MetaData mMetaData;
     Rotation mRotation;
 
     TmpPdfFile *createTmpPdfFile();
     void stopMerging();
+    void updateInkBoxes();
 };
 
 

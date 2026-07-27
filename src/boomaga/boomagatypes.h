@@ -112,9 +112,29 @@ inline Rotation &operator-=(Rotation &r1, Rotation r2) { r1 = intToRotation((int
 
 enum Unit {
     UnitMillimeter = 0,
-    UnitPoint      = 1
-    //UnitInch       = 2
+    UnitPoint      = 1,
+    UnitInch       = 2
 };
+
+Q_DECLARE_METATYPE(Unit)
+
+QString unitToStr(Unit value);
+Unit strToUnit(const QString &str);
+
+// Conversions between PDF points and a display unit. Points are the storage
+// unit everywhere in the kernel; a Unit only ever affects presentation.
+qreal toUnit(qreal value, Unit unit);
+qreal fromUnit(qreal value, Unit unit);
+
+// The unit the user has chosen in the preferences. Defined in settings.cpp,
+// next to the key it reads.
+Unit currentUnit();
+
+// Presentation hints for the QDoubleSpinBoxes that display lengths.
+QString unitSuffix(Unit unit);
+int     unitDecimals(Unit unit);
+double  unitStep(Unit unit);
+double  unitMax(Unit unit);
 
 struct PdfPageInfo
 {

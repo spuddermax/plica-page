@@ -110,6 +110,136 @@ ColorMode strToColorMode(const QString &str)
 
 
 /************************************************
+ * A PDF point is exactly 1/72 inch, and an inch is exactly 25.4 mm.
+ * Using the exact ratios (rather than deriving them from rounded A4
+ * dimensions) is what lets a value round-trip unchanged when the user
+ * switches between millimeters and inches.
+ ************************************************/
+#define PT_PER_INCH 72.0
+#define MM_PER_INCH 25.4
+
+
+/************************************************
+
+ ************************************************/
+QString unitToStr(Unit value)
+{
+    switch (value)
+    {
+    case UnitMillimeter:    return "Millimeter";
+    case UnitPoint:         return "Point";
+    case UnitInch:          return "Inch";
+    }
+    return "";
+}
+
+
+/************************************************
+
+ ************************************************/
+Unit strToUnit(const QString &str)
+{
+    QString s = str.toUpper();
+    if (s.startsWith("INCH"))   return UnitInch;
+    if (s.startsWith("IN"))     return UnitInch;
+    if (s.startsWith("POINT"))  return UnitPoint;
+    if (s.startsWith("PT"))     return UnitPoint;
+    return UnitMillimeter;
+}
+
+
+/************************************************
+ * Points -> display unit.
+ ************************************************/
+qreal toUnit(qreal value, Unit unit)
+{
+    switch (unit)
+    {
+    case UnitPoint:         return value;
+    case UnitMillimeter:    return value * (MM_PER_INCH / PT_PER_INCH);
+    case UnitInch:          return value / PT_PER_INCH;
+    }
+    return 0;
+}
+
+
+/************************************************
+ * Display unit -> points.
+ ************************************************/
+qreal fromUnit(qreal value, Unit unit)
+{
+    switch (unit)
+    {
+    case UnitPoint:         return value;
+    case UnitMillimeter:    return value * (PT_PER_INCH / MM_PER_INCH);
+    case UnitInch:          return value * PT_PER_INCH;
+    }
+    return 0;
+}
+
+
+/************************************************
+
+ ************************************************/
+QString unitSuffix(Unit unit)
+{
+    switch (unit)
+    {
+    case UnitMillimeter:    return QObject::tr("mm", "Length unit, millimeters");
+    case UnitPoint:         return QObject::tr("pt", "Length unit, typographic points");
+    case UnitInch:          return QObject::tr("in", "Length unit, inches");
+    }
+    return "";
+}
+
+
+/************************************************
+
+ ************************************************/
+int unitDecimals(Unit unit)
+{
+    switch (unit)
+    {
+    case UnitMillimeter:    return 2;
+    case UnitPoint:         return 1;
+    case UnitInch:          return 3;
+    }
+    return 2;
+}
+
+
+/************************************************
+
+ ************************************************/
+double unitStep(Unit unit)
+{
+    switch (unit)
+    {
+    case UnitMillimeter:    return 1.0;
+    case UnitPoint:         return 1.0;
+    case UnitInch:          return 0.125;
+    }
+    return 1.0;
+}
+
+
+/************************************************
+ * Upper bound for a margin-sized length. The three values are the same
+ * physical distance (~100mm), so switching units never truncates a value.
+ ************************************************/
+double unitMax(Unit unit)
+{
+    switch (unit)
+    {
+    case UnitMillimeter:    return 99.99;
+    case UnitPoint:         return 288.0;
+    case UnitInch:          return 4.0;
+    }
+    return 99.99;
+}
+
+
+/************************************************
 
  ************************************************/
 QString safeFileName(const QString &str)

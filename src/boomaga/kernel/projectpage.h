@@ -47,6 +47,25 @@ public:
     Sheet *sheet() const { return mSheet; }
 
     virtual QRectF rect() const;
+
+    /**
+     * The part of the page that actually carries ink, as found by PageTrimmer.
+     * Null until the scan has run, or when the page turned out to be blank.
+     */
+    QRectF inkBox() const { return mInkBox; }
+    void setInkBox(const QRectF &value) { mInkBox = value; }
+
+    /**
+     * The box that gets scaled onto the sheet: the ink box grown by the trim
+     * padding while trimming is enabled, otherwise plain rect().
+     *
+     * Deliberately separate from rect(), which stays the CropBox. rect() also
+     * drives the landscape and rotation decisions in Project::calcRotation()
+     * and LayoutNUp::calcPageRotation(), and a trimmed box with a different
+     * aspect ratio would silently rotate the whole sheet.
+     */
+    QRectF trimRect() const;
+
     Rotation pdfRotation() const;
     Rotation manualRotation() const { return mManualRotation; }
     void setManualRotation(Rotation value) { mManualRotation = value; }
@@ -81,6 +100,7 @@ private:
     Sheet *mSheet;
     bool mVisible;
     PdfPageInfo mPdfInfo;
+    QRectF mInkBox;
     Rotation mManualRotation;
     bool mManualStartSubBooklet;
     bool mAutoStartSubBooklet;

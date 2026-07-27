@@ -118,6 +118,75 @@
          </widget>
         </item>
         <item>
+         <widget class="QGroupBox" name="trimBox">
+          <property name="toolTip">
+           <string comment="MainForm::Trim group box tooltip">Cut the blank margins off each page and scale what is left to fill the sheet.</string>
+          </property>
+          <property name="title">
+           <string comment="MainForm::Trim group box">Trim whitespace</string>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_5">
+           <item>
+            <widget class="QRadioButton" name="trimPerPageBtn">
+             <property name="toolTip">
+              <string comment="MainForm::Trim per page tooltip">Give every page its own crop. Removes the most whitespace, but a sparse page ends up with much larger type than a full one.</string>
+             </property>
+             <property name="text">
+              <string comment="MainForm::Trim per page">Each page separately</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="trimUniformBtn">
+             <property name="toolTip">
+              <string comment="MainForm::Trim uniform tooltip">Crop every page to the same rectangle, so the type stays one size throughout the document.</string>
+             </property>
+             <property name="text">
+              <string comment="MainForm::Trim uniform">Same crop for all pages</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="trimPaddingLayout">
+             <item>
+              <widget class="QLabel" name="trimPaddingLbl">
+               <property name="text">
+                <string comment="MainForm::Trim padding label">Padding:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="trimPaddingSpin">
+               <property name="toolTip">
+                <string comment="MainForm::Trim padding tooltip">Blank space kept around the trimmed content.</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="trimPaddingSpacer">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
          <widget class="QGroupBox" name="printerBox">
           <property name="title">
            <string>Printer</string>

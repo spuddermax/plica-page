@@ -50,6 +50,7 @@ set(HEADERS
     kernel/printer.h
     kernel/cupsprinteroptions.h
     kernel/pdfprocessor.h
+    kernel/pagetrimmer.h
 
     iofiles/infile.h
     iofiles/boofile.h
@@ -101,6 +102,7 @@ set(SOURCES
     kernel/cupsprinteroptions.cpp
     kernel/printer.cpp
     kernel/pdfprocessor.cpp
+    kernel/pagetrimmer.cpp
     
     iofiles/infile.cpp
     iofiles/pdffile.cpp

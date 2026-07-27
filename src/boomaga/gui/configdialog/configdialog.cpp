@@ -65,6 +65,9 @@ ConfigDialog::ConfigDialog(QWidget *parent) :
     ui->setupUi(this);
     restoreGeometry(settings->value(Settings::Preferences_Geometry).toByteArray());
 
+    ui->unitsCombo->addItem(tr("Millimeters", "Measurement unit"), UnitMillimeter);
+    ui->unitsCombo->addItem(tr("Inches",      "Measurement unit"), UnitInch);
+
     connect(ui->bookletGroupBox, SIGNAL(clicked(bool)),
             this, SLOT(bookletGroupBoxClicked(bool)));
 
@@ -154,6 +157,9 @@ void ConfigDialog::loadSettings()
     ui->negativeMargins->setChecked(settings->value(Settings::AllowNegativeMargins).toBool());
     ui->rightToLeft->setChecked(settings->value(Settings::RightToLeft).toBool());
 
+    int unitIdx = ui->unitsCombo->findData(currentUnit());
+    ui->unitsCombo->setCurrentIndex(unitIdx > -1 ? unitIdx : 0);
+
 #ifdef MAC_UPDATER
    ui->updateGroupBox->setChecked(Updater::sharedUpdater().automaticallyChecksForUpdates());
 #endif
@@ -186,6 +192,15 @@ void ConfigDialog::saveSettings()
         upadateProject = true;
 
     settings->setValue(Settings::RightToLeft, ui->rightToLeft->isChecked());
+
+    // Units are display-only, but the widgets showing them have to be relabelled,
+    // and update() is what gets MainWindow::updateWidgets() called.
+    Unit unit = static_cast<Unit>(ui->unitsCombo->currentData().toInt());
+    if (currentUnit() != unit)
+    {
+        upadateProject = true;
+        settings->setValue(Settings::Units, unitToStr(unit));
+    }
 
     if (upadateProject)
         project->update();

@@ -27,6 +27,7 @@
 #ifndef TMPPDFFILE_H
 #define TMPPDFFILE_H
 
+#include <QHash>
 #include <QObject>
 #include <QVector>
 #include "boomagatypes.h"
@@ -34,6 +35,7 @@
 class Sheet;
 class Job;
 class JobList;
+class ProjectPage;
 
 namespace PDF {
     class Writer;
@@ -57,6 +59,20 @@ public:
     bool writeDocument(const QList<Sheet*> &sheets, QIODevice *out);
     bool isValid() const { return mValid; }
 
+    /**
+     * The document as merge() left it: a valid PDF holding one page per source
+     * page. updateSheets() appends a sheet layer whose catalog supersedes that
+     * page tree, so the bytes have to be cut back to mOrigFileSize to see the
+     * source pages again.
+     */
+    QByteArray baseDocument() const;
+
+    /// The box each page of baseDocument() is rendered from, in page order.
+    const QVector<QRectF> &pageRects() const { return mPageRects; }
+
+    /// Index of a page within baseDocument(), or -1 if it is not in there.
+    int pageIndex(const ProjectPage *page) const;
+
 signals:
     void merged();
     void progress(int progress, int all) const;
@@ -71,6 +87,8 @@ private:
     qint64 mOrigFileSize;
     qint64 mOrigXrefPos;
     bool mValid;
+    QVector<QRectF> mPageRects;
+    QHash<uint, int> mXObjToPage;
 };
 
 

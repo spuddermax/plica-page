@@ -56,6 +56,8 @@ public:
 private slots:
     void switchLayout();
     void switchPrinterProfile();
+    void switchTrimMode();
+    void trimPaddingChanged();
 
     bool print(uint count = 1, bool collate = true);
     void printAndClose(uint count = 1, bool collate = true);
@@ -121,6 +123,7 @@ private:
     void fillPrintersCombo();
     void initActions();
     void initStatusBar();
+    void updateTrimWidgets();
 
     void loadSettings();
     void saveSettings();

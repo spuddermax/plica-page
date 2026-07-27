@@ -63,6 +63,13 @@ private slots:
     void test_BooklesSplit();
     void test_BooklesSplit_data();
 
+    void test_Units();
+    void test_InkBox();
+    void test_InkBoxPdf();
+    void test_TrimRect();
+    void test_TrimScale();
+    void test_TrimClip();
+
     void testPdfArray();
 
     void testPdfBool();

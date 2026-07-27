@@ -35,47 +35,10 @@
 #include <QDir>
 #include <QTemporaryFile>
 
-#define A4_HEIGHT_MM    297
 #define A4_HEIGHT_PT    842
-#define A4_WIDTH_MM     210
 #define A4_WIDTH_PT     595
 
-#define MM_TO_PT    (A4_HEIGHT_PT * 1.0 / A4_HEIGHT_MM)
-#define PT_TO_MM    (A4_HEIGHT_MM * 1.0 / A4_HEIGHT_PT)
-
-
-/************************************************
-
- ************************************************/
-qreal toUnit(qreal value, Unit unit)
-{
-    switch (unit)
-    {
-    case UnitPoint:
-        return value;
-
-    case UnitMillimeter:
-        return value * PT_TO_MM;
-    }
-    return 0;
-}
-
-
-/************************************************
-
- ************************************************/
-qreal fromUnit(qreal value, Unit unit)
-{
-    switch (unit)
-    {
-    case UnitPoint:
-        return value;
-
-    case UnitMillimeter:
-        return value * MM_TO_PT;
-    }
-    return 0;
-}
+// toUnit()/fromUnit() live in boomagatypes.cpp, alongside the Unit enum.
 
 
 /************************************************

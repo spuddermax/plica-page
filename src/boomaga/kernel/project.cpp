@@ -31,6 +31,7 @@
 #include "tmppdffile.h"
 #include "sheet.h"
 #include "layout.h"
+#include "pagetrimmer.h"
 #include "iofiles/infile.h"
 #include "iofiles/boofile.h"
 
@@ -88,6 +89,10 @@ Project::Project(QObject *parent) :
     mNullPrinter("Fake"),
     mPrinter(&mNullPrinter),
     mDoubleSided(true),
+    mTrimWhitespace(false),
+    mTrimUniform(false),
+    mTrimPadding(0),
+    mInkBoxesReady(false),
     mRotation(NoRotate)
 {
 }
@@ -246,6 +251,10 @@ void Project::tmpFileMerged()
     mTmpFile = mLastTmpFile;
     mLastTmpFile = 0;
 
+    // New pages, so whatever was scanned before no longer describes them.
+    mInkBoxesReady = false;
+    mUniformInkBox = QRectF();
+
     if (mMetaData.title().isEmpty() && !mJobs.isEmpty())
     {
         mMetaData.setTitle(mJobs.first().title());
@@ -262,6 +271,10 @@ void Project::update()
 {
     ProjectState state(this);
     ProjectPage *curPage = 0;
+
+    // Before any geometry is computed: the layout asks pages for their
+    // trimRect(), which is only meaningful once the ink boxes are known.
+    updateInkBoxes();
 
     mPages.clear();
     foreach(const Job &job, mJobs)
@@ -838,6 +851,97 @@ void Project::setDoubleSided(bool value)
 {
     mDoubleSided = value;
     emit changed();
+}
+
+
+/************************************************
+ * The three trim setters all change page geometry, so they need a full
+ * update() to rewrite the sheet layer - emit changed() alone would only
+ * refresh the widgets and leave the PDF as it was.
+ ************************************************/
+void Project::setTrimWhitespace(bool value)
+{
+    if (mTrimWhitespace == value)
+        return;
+
+    mTrimWhitespace = value;
+    update();
+}
+
+
+/************************************************
+ *
+ ************************************************/
+void Project::setTrimUniform(bool value)
+{
+    if (mTrimUniform == value)
+        return;
+
+    mTrimUniform = value;
+    update();
+}
+
+
+/************************************************
+ *
+ ************************************************/
+void Project::setTrimPadding(qreal points)
+{
+    if (qFuzzyCompare(mTrimPadding, points))
+        return;
+
+    mTrimPadding = points;
+
+    // Padding is applied on top of the ink boxes, so they stay valid.
+    if (mTrimWhitespace)
+        update();
+}
+
+
+/************************************************
+ * Rasterizes every source page once and records where its ink sits.
+ *
+ * Runs against TmpPdfFile::baseDocument() rather than the file on disk: by the
+ * time this is first called the sheet layer has usually been appended, and its
+ * catalog hides the per-source-page tree this needs.
+ ************************************************/
+void Project::updateInkBoxes()
+{
+    if (mInkBoxesReady || !mTrimWhitespace || !mTmpFile || !mTmpFile->isValid())
+        return;
+
+    const QByteArray baseDoc = mTmpFile->baseDocument();
+    if (baseDoc.isEmpty())
+        return;
+
+    PageTrimmer trimmer;
+    connect(&trimmer, SIGNAL(progress(int,int)), this, SIGNAL(progress(int,int)));
+
+    const QVector<QRectF> inkBoxes = trimmer.scan(baseDoc, mTmpFile->pageRects());
+
+    mUniformInkBox = QRectF();
+    foreach (const Job &job, mJobs)
+    {
+        for (int p = 0; p < job.pageCount(); ++p)
+        {
+            ProjectPage *page = job.page(p);
+            const int idx = mTmpFile->pageIndex(page);
+
+            if (idx < 0 || idx >= inkBoxes.count())
+                continue;
+
+            const QRectF box = inkBoxes.at(idx);
+            page->setInkBox(box);
+
+            // Blank pages must not drag the shared box out to the full sheet.
+            if (box.isValid() && !box.isEmpty())
+                mUniformInkBox = mUniformInkBox.isValid() ? mUniformInkBox.united(box)
+                                                          : box;
+        }
+    }
+
+    mInkBoxesReady = true;
+    emit progress(-1, -1);
 }
 
 

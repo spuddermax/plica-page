@@ -49,6 +49,11 @@ public:
         AutoSaveDir,
         RecentFiles,
         RightToLeft,
+        Units,
+
+        TrimWhitespace,
+        TrimUniform,
+        TrimPadding,
 
         // Preferences **************************
         Preferences_Geometry,

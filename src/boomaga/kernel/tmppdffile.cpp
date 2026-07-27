@@ -60,6 +60,21 @@ QIODevice &operator<<(QIODevice &out, const int value)
 
 
 /************************************************
+ * A PDF rectangle is [x1 y1 x2 y2]; the kernel carries it as
+ * QRectF(x1, y1, width, height).
+ ************************************************/
+static PDF::Array rectToPdfArray(const QRectF &rect)
+{
+    PDF::Array res;
+    res.append(PDF::Number(rect.left()));
+    res.append(PDF::Number(rect.top()));
+    res.append(PDF::Number(rect.right()));
+    res.append(PDF::Number(rect.bottom()));
+    return res;
+}
+
+
+/************************************************
 
  ************************************************/
 TmpPdfFile::TmpPdfFile(QObject *parent):
@@ -159,6 +174,19 @@ void TmpPdfFile::merge(const JobList &jobs)
         file.close();
         mValid = true;
 
+        // Remember which source page ended up at which index in the base
+        // document, so PageTrimmer's results can be matched back to pages.
+        mPageRects.clear();
+        mXObjToPage.clear();
+        mPageRects.reserve(pages.count());
+        for (int i = 0; i < pages.count(); ++i)
+        {
+            const PdfPageInfo &pi = pages.at(i);
+            mPageRects << (pi.cropBox.isValid() ? pi.cropBox : pi.mediaBox);
+            if (!pi.xObjNums.isEmpty())
+                mXObjToPage.insert(pi.xObjNums.first(), i);
+        }
+
     }
     catch (PDF::Error &err)
     {
@@ -184,15 +212,13 @@ void TmpPdfFile::writeCatalog(PDF::Writer *writer, const QVector<PdfPageInfo> &p
     // ..........................................
 
     // Pages object .............................
-    if (!std::getenv("BOOMAGAMERGER_DEBUGPAGES"))
-    {
-        PDF::Object pagesObj(2);
-        pagesObj.dict().insert("Type",  PDF::Name("Pages"));
-        pagesObj.dict().insert("Count", PDF::Number(0));
-        pagesObj.dict().insert("Kids",  PDF::Array());
-        writer->writeObject(pagesObj);
-    }
-    else
+    // One /Page per source page, each drawing just that page's XObject.
+    //
+    // The sheet layer that writeSheets() appends later carries its own catalog
+    // and page tree, so this tree is orphaned in the finished document and costs
+    // nothing but a few small objects. Keeping it means the tmp file is a valid
+    // PDF of the *source* pages, which is what PageTrimmer renders to find each
+    // page's ink bounding box.
     {
         PDF::Object pagesObj(2);
         pagesObj.dict().insert("Type",  PDF::Name("Pages"));
@@ -214,21 +240,18 @@ void TmpPdfFile::writeCatalog(PDF::Writer *writer, const QVector<PdfPageInfo> &p
                 dict.insert("Parent",    PDF::Link(pagesObj.objNum(), 0));
                 dict.insert("Resources", PDF::Link(xobj.objNum()));
 
-                PDF::Array mediaBox;
-                mediaBox.append(PDF::Number(pi.mediaBox.left()));
-                mediaBox.append(PDF::Number(pi.mediaBox.top()));
-                mediaBox.append(PDF::Number(pi.mediaBox.width()));
-                mediaBox.append(PDF::Number(pi.mediaBox.height()));
-                dict.insert("MediaBox",  mediaBox);
+                // A PDF rectangle is [x1 y1 x2 y2]. PdfProcessor stores it as
+                // QRectF(x1, y1, w, h), so the far corner is right()/bottom().
+                dict.insert("MediaBox", rectToPdfArray(pi.mediaBox));
+                dict.insert("CropBox",  rectToPdfArray(pi.cropBox.isValid() ? pi.cropBox
+                                                                            : pi.mediaBox));
 
-                PDF::Array cropBox;
-                cropBox.append(PDF::Number(pi.mediaBox.left()));
-                cropBox.append(PDF::Number(pi.mediaBox.top()));
-                cropBox.append(PDF::Number(pi.mediaBox.width()));
-                cropBox.append(PDF::Number(pi.mediaBox.height()));
-                dict.insert("CropBox",   cropBox);
-
-                dict.insert("Rotate",    PDF::Number(pi.rotate));
+                // Deliberately not pi.rotate. The XObject content is unrotated,
+                // and the sheet transform applies /Rotate itself via
+                // ProjectPage::pdfRotation(). Rendering these pages unrotated is
+                // what keeps a detected ink box in the same coordinate space as
+                // ProjectPage::rect().
+                dict.insert("Rotate",    PDF::Number(0));
                 dict.insert("Contents",  PDF::Link(content.objNum()));
                 page.setValue(dict);
                 writer->writeObject(page);
@@ -297,6 +320,34 @@ void TmpPdfFile::updateSheets(const QList<Sheet *> &sheets)
         file.resize(file.pos());
         file.close();
    }
+}
+
+
+/************************************************
+
+ ************************************************/
+QByteArray TmpPdfFile::baseDocument() const
+{
+    if (!mValid || mOrigFileSize < 1)
+        return QByteArray();
+
+    QFile f(mFileName);
+    if (!f.open(QFile::ReadOnly))
+        return QByteArray();
+
+    return f.read(mOrigFileSize);
+}
+
+
+/************************************************
+
+ ************************************************/
+int TmpPdfFile::pageIndex(const ProjectPage *page) const
+{
+    if (!page || page->pdfInfo().xObjNums.isEmpty())
+        return -1;
+
+    return mXObjToPage.value(page->pdfInfo().xObjNums.first(), -1);
 }
 
 
@@ -558,13 +609,23 @@ void TmpPdfFile::getPageStream(QString *out, const Sheet *sheet) const
             *out += QString("q\n%1 0 0 %1 0 0 cm\n")
                     .arg(spec.scale, 0, 'f', 3);
 
-            QRectF rect = page->rect();
+            QRectF rect = page->trimRect();
 
             // Translate for page rect(x1,y1) ..
             *out += QString("q\n1 0 0 1 %1 %2 cm\n")
                     .arg(-rect.left(), 0, 'f', 3)
                     .arg(-rect.top(), 0, 'f', 3);
 
+            // Clip to that rect ...............
+            // The XObject's own /BBox only clips to the original CropBox, so
+            // without this anything outside a trimmed box would still be
+            // painted - and scaled up - straight over the neighbouring pages
+            // on the sheet.
+            *out += QString("%1 %2 %3 %4 re\nW\nn\n")
+                    .arg(rect.left(),   0, 'f', 3)
+                    .arg(rect.top(),    0, 'f', 3)
+                    .arg(rect.width(),  0, 'f', 3)
+                    .arg(rect.height(), 0, 'f', 3);
 
             for (int j=0; j<page->pdfInfo().xObjNums.size(); ++j)
                 *out += QString("/Im%1_%2 Do\n").arg(i).arg(j);

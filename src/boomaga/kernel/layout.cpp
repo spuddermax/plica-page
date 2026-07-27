@@ -171,7 +171,7 @@ TransformSpec LayoutNUp::transformSpec(const Sheet *sheet, int pageNumOnSheet, R
         spec.rotation = calcPageRotation(page, sheetRotation);
         if (page)
         {
-            pageSize = page->rect().size();
+            pageSize = page->trimRect().size();
             spec.rotation += page->manualRotation();
         }
         else
