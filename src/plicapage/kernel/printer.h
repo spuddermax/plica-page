@@ -102,9 +102,26 @@ public:
     bool manualDuplexReversesOrder() const { return mManualDuplexReversesOrder; }
     void setManualDuplexReversesOrder(bool value);
 
-    /// False until the calibration wizard has run, so it is only offered once.
+    /**
+     * What the user does with the stack between passes. Remembered so the
+     * print-time prompt can show it back to them, and because the calibrated
+     * transform is only valid for this particular handling.
+     */
+    ManualDuplexHandling manualDuplexHandling() const { return mManualDuplexHandling; }
+    void setManualDuplexHandling(ManualDuplexHandling value);
+
+    /**
+     * True only once the wizard has actually measured this printer. Kept
+     * distinct from declining the offer: if the user says "not now" we must
+     * stop asking, but we still do not know which way the paper goes back in
+     * and must not pretend to.
+     */
     bool duplexCalibrated() const { return mDuplexCalibrated; }
     void setDuplexCalibrated(bool value);
+
+    /// True once the user has turned the offer down, so it is not asked again.
+    bool duplexCalibrationDeclined() const { return mDuplexCalibrationDeclined; }
+    void setDuplexCalibrationDeclined(bool value);
 
     void readSettings();
     void saveSettings() const;
@@ -124,7 +141,9 @@ private:
     FlipType mFlipType;
     FlipType mManualFlipType;
     bool mManualDuplexReversesOrder;
+    ManualDuplexHandling mManualDuplexHandling;
     bool mDuplexCalibrated;
+    bool mDuplexCalibrationDeclined;
 };
 
 
@@ -191,8 +210,14 @@ public:
     bool manualDuplexReversesOrder() const { return mCurrentProfile->manualDuplexReversesOrder(); }
     void setManualDuplexReversesOrder(bool value) { mCurrentProfile->setManualDuplexReversesOrder(value); }
 
+    ManualDuplexHandling manualDuplexHandling() const { return mCurrentProfile->manualDuplexHandling(); }
+    void setManualDuplexHandling(ManualDuplexHandling v) { mCurrentProfile->setManualDuplexHandling(v); }
+
     bool duplexCalibrated() const { return mCurrentProfile->duplexCalibrated(); }
     void setDuplexCalibrated(bool value) { mCurrentProfile->setDuplexCalibrated(value); }
+
+    bool duplexCalibrationDeclined() const { return mCurrentProfile->duplexCalibrationDeclined(); }
+    void setDuplexCalibrationDeclined(bool v) { mCurrentProfile->setDuplexCalibrationDeclined(v); }
 
     bool canChangeDuplexType() const { return mCanChangeDuplexType; }
 

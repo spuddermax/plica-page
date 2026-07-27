@@ -78,7 +78,9 @@ public:
         PrinterProfile_FlipType,
         PrinterProfile_ManualFlipType,
         PrinterProfile_ManualDuplexReversesOrder,
+        PrinterProfile_ManualDuplexHandling,
         PrinterProfile_DuplexCalibrated,
+        PrinterProfile_DuplexCalibrationDeclined,
 
         // PrinterSettingsDialog ****************
         PrinterSettingsDialog_Geometry,

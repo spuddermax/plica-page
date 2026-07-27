@@ -57,6 +57,33 @@ FlipType strToFlipType(const QString &str)
 /************************************************
 
  ************************************************/
+QString manualDuplexHandlingToStr(ManualDuplexHandling value)
+{
+    switch (value)
+    {
+    case HandlingFlipSideways: return "FlipSideways";
+    case HandlingFlipEndOver:  return "FlipEndOver";
+    case HandlingNoFlip:       return "NoFlip";
+    }
+    return "";
+}
+
+
+/************************************************
+
+ ************************************************/
+ManualDuplexHandling strToManualDuplexHandling(const QString &str)
+{
+    QString s = str.toUpper();
+    if (s == "FLIPENDOVER") return HandlingFlipEndOver;
+    if (s == "NOFLIP")      return HandlingNoFlip;
+    return HandlingFlipSideways;
+}
+
+
+/************************************************
+
+ ************************************************/
 QString duplexTypeToStr(DuplexType value)
 {
     switch (value)

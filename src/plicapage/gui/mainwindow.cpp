@@ -604,8 +604,10 @@ void MainWindow::offerDuplexCalibration()
 
     if (dialog.clickedButton() != setUp)
     {
-        // Don't nag on every job. The button in the printer settings stays.
-        project->printer()->setDuplexCalibrated(true);
+        // Stop asking, but do not claim to know the movement - the print prompt
+        // checks duplexCalibrated(), not this. The button in printer settings
+        // stays available.
+        project->printer()->setDuplexCalibrationDeclined(true);
         project->printer()->saveSettings();
         return;
     }
@@ -716,7 +718,8 @@ bool MainWindow::print(uint count, bool collate)
 
     // Which way the paper has to go back in is a property of the printer that
     // nobody can know without trying it. Offer to find out, once per profile.
-    if (split && !project->printer()->duplexCalibrated())
+    if (split && !project->printer()->duplexCalibrated()
+              && !project->printer()->duplexCalibrationDeclined())
         offerDuplexCalibration();
 
     if (split)
@@ -787,19 +790,9 @@ bool MainWindow::print(uint count, bool collate)
          // Show dialog ....................................
          if (keeper.sheets_1.count() && keeper.sheets_2.count())
          {
-             QMessageBox dialog(this);
-             dialog.setWindowTitle(this->windowTitle() + " ");
-             dialog.setIconPixmap(QPixmap(":/48/print"));
-
-             dialog.setText(tr("Print the odd pages on %1.<p>"
-                               "When finished, turn the pages, insert them into the printer<br>"
-                               "and click the Continue button.").arg(project->printer()->name()));
-
-             dialog.addButton(QMessageBox::Abort);
-             QPushButton *btn = dialog.addButton(QMessageBox::Ok);
-             btn->setText(tr("Continue"));
-
-             if (dialog.exec() != QMessageBox::Ok)
+             // Shows the movement this printer was calibrated with, so nobody
+             // has to remember which way the paper goes back in.
+             if (!showManualDuplexPrompt(project->printer(), this))
              {
                  delete(infoDialog);
                  return false;

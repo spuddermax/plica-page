@@ -176,6 +176,38 @@ void TestPlicaPage::test_DuplexLegacyMigration()
         settings->endGroup();
     }
 
+    // The handling is what the user physically does with the stack. It has to
+    // survive a save/load round trip, because the calibrated transform is only
+    // valid for that handling and the print prompt shows it back to them.
+    {
+        const ManualDuplexHandling all[] = { HandlingFlipSideways,
+                                             HandlingFlipEndOver,
+                                             HandlingNoFlip };
+        for (ManualDuplexHandling h : all)
+        {
+            QCOMPARE(strToManualDuplexHandling(manualDuplexHandlingToStr(h)), h);
+
+            settings->beginGroup(QString("TestHandling_%1").arg((int)h));
+            PrinterProfile saved;
+            saved.setManualDuplexHandling(h);
+            saved.saveSettings();
+
+            PrinterProfile loaded;
+            loaded.readSettings();
+            QCOMPARE((int)loaded.manualDuplexHandling(), (int)h);
+            settings->endGroup();
+        }
+
+        // A profile that predates the setting has to fall back to something,
+        // and it must be the movement the wizard offers first.
+        settings->beginGroup("TestHandling_absent");
+        settings->remove(QString("ManualDuplexHandling"));
+        PrinterProfile profile;
+        profile.readSettings();
+        QCOMPARE((int)profile.manualDuplexHandling(), (int)HandlingFlipSideways);
+        settings->endGroup();
+    }
+
     // Once the new key exists it wins, and the flip edge is whatever was stored
     // rather than something inferred from the legacy enum.
     {

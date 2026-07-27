@@ -57,6 +57,28 @@ Q_DECLARE_METATYPE(FlipType)
 QString flipTypeToStr(FlipType value);
 FlipType strToFlipType(const QString &str);
 
+
+/************************************************
+ * What the user physically does with the stack between the two passes of a
+ * manual double-sided job.
+ *
+ * This has to be remembered, not just the transform the calibration measured:
+ * that measurement is the printer's paper path combined with this action, so it
+ * only holds while the user keeps doing the same thing. Storing it lets
+ * PlicaPage show the action back to them instead of asking them to remember it.
+ ************************************************/
+enum ManualDuplexHandling
+{
+    HandlingFlipSideways = 0,   ///< turn the stack over about its long edge
+    HandlingFlipEndOver  = 1,   ///< turn the stack over about its short edge
+    HandlingNoFlip       = 2    ///< put it straight back, not turned over
+};
+
+Q_DECLARE_METATYPE(ManualDuplexHandling)
+
+QString manualDuplexHandlingToStr(ManualDuplexHandling value);
+ManualDuplexHandling strToManualDuplexHandling(const QString &str);
+
 enum ColorMode
 {
     ColorModeAuto       = 0,

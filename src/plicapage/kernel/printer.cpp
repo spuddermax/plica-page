@@ -67,7 +67,9 @@ PrinterProfile::PrinterProfile():
     // or the other.
     mManualFlipType(FlipType::ShortEdge),
     mManualDuplexReversesOrder(true),
-    mDuplexCalibrated(false)
+    mManualDuplexHandling(HandlingFlipSideways),
+    mDuplexCalibrated(false),
+    mDuplexCalibrationDeclined(false)
 {
 
 }
@@ -94,7 +96,9 @@ PrinterProfile &PrinterProfile::operator=(const PrinterProfile &other)
     // This operator is hand-written, and PrinterSettings copies profiles by
     // value on every OK. A member missing from here is silently discarded.
     mManualDuplexReversesOrder = other.mManualDuplexReversesOrder;
+    mManualDuplexHandling      = other.mManualDuplexHandling;
     mDuplexCalibrated          = other.mDuplexCalibrated;
+    mDuplexCalibrationDeclined = other.mDuplexCalibrationDeclined;
 
     return *this;
 }
@@ -247,9 +251,27 @@ void PrinterProfile::setManualDuplexReversesOrder(bool value)
 /************************************************
  *
  ************************************************/
+void PrinterProfile::setManualDuplexHandling(ManualDuplexHandling value)
+{
+    mManualDuplexHandling = value;
+}
+
+
+/************************************************
+ *
+ ************************************************/
 void PrinterProfile::setDuplexCalibrated(bool value)
 {
     mDuplexCalibrated = value;
+}
+
+
+/************************************************
+ *
+ ************************************************/
+void PrinterProfile::setDuplexCalibrationDeclined(bool value)
+{
+    mDuplexCalibrationDeclined = value;
 }
 
 
@@ -353,8 +375,14 @@ void PrinterProfile::readSettings()
     if (mDuplexType == DuplexManualReverse)
         mDuplexType = DuplexManual;
 
+    s = settings->value(Settings::PrinterProfile_ManualDuplexHandling,
+                        manualDuplexHandlingToStr(mManualDuplexHandling)).toString();
+    mManualDuplexHandling = strToManualDuplexHandling(s);
+
     mDuplexCalibrated = settings->value(Settings::PrinterProfile_DuplexCalibrated,
                                         mDuplexCalibrated).toBool();
+    mDuplexCalibrationDeclined = settings->value(Settings::PrinterProfile_DuplexCalibrationDeclined,
+                                                 mDuplexCalibrationDeclined).toBool();
 }
 
 
@@ -375,7 +403,10 @@ void PrinterProfile::saveSettings() const
     settings->setValue(Settings::PrinterProfile_ReverseOrder,   mReverseOrder);
     settings->setValue(Settings::PrinterProfile_ManualFlipType, flipTypeToStr(mManualFlipType));
     settings->setValue(Settings::PrinterProfile_ManualDuplexReversesOrder, mManualDuplexReversesOrder);
+    settings->setValue(Settings::PrinterProfile_ManualDuplexHandling,
+                       manualDuplexHandlingToStr(mManualDuplexHandling));
     settings->setValue(Settings::PrinterProfile_DuplexCalibrated,          mDuplexCalibrated);
+    settings->setValue(Settings::PrinterProfile_DuplexCalibrationDeclined, mDuplexCalibrationDeclined);
     settings->setValue(Settings::PrinterProfile_ColorMode,      colorModeToStr(mColorMode));
     settings->setValue(Settings::PrinterProfile_FlipType,       flipTypeToStr(mFlipType));
 }

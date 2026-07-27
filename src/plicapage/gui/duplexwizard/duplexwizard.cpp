@@ -47,7 +47,8 @@
 
  ************************************************/
 FlipDiagram::FlipDiagram(QWidget *parent):
-    QWidget(parent)
+    QWidget(parent),
+    mHandling(HandlingFlipSideways)
 {
     setMinimumSize(260, 150);
 }
@@ -63,8 +64,21 @@ QSize FlipDiagram::sizeHint() const
 
 
 /************************************************
- * A sheet with a dashed vertical axis and arrows curling round it: turn the
- * paper about its long edge, the way a book page turns.
+
+ ************************************************/
+void FlipDiagram::setHandling(ManualDuplexHandling handling)
+{
+    if (mHandling == handling)
+        return;
+
+    mHandling = handling;
+    update();
+}
+
+
+/************************************************
+ * A sheet with the axis it is turned about and an arrow curling round that
+ * axis, or a plain down arrow when it is not turned at all.
  ************************************************/
 void FlipDiagram::paintEvent(QPaintEvent *)
 {
@@ -86,31 +100,142 @@ void FlipDiagram::paintEvent(QPaintEvent *)
     QRectF bar(sheet.left() + 4, sheet.top() + 4, sheet.width() - 8, 12);
     p.fillRect(bar, Qt::black);
 
-    // Turning axis, down the middle.
-    p.setPen(QPen(mark, 2, Qt::DashLine));
-    p.drawLine(QPointF(sheet.center().x(), sheet.top() - 6),
-               QPointF(sheet.center().x(), sheet.bottom() + 6));
+    const QPointF c = sheet.center();
 
-    // Arrows curling round that axis.
+    if (mHandling == HandlingNoFlip)
+    {
+        // Nothing to turn about: just show it going straight back down.
+        p.setPen(QPen(mark, 2));
+        p.setBrush(Qt::NoBrush);
+        p.drawLine(QPointF(c.x(), sheet.top() + 26), QPointF(c.x(), sheet.bottom() - 16));
+
+        QPolygonF head;
+        head << QPointF(c.x(), sheet.bottom() - 4)
+             << QPointF(c.x() - 7, sheet.bottom() - 18)
+             << QPointF(c.x() + 7, sheet.bottom() - 18);
+        p.setBrush(mark);
+        p.drawPolygon(head);
+        return;
+    }
+
+    const bool sideways = (mHandling == HandlingFlipSideways);
+
+    // The turning axis: down the middle for a sideways turn, across the middle
+    // for an end-over-end one.
+    p.setPen(QPen(mark, 2, Qt::DashLine));
+    if (sideways)
+        p.drawLine(QPointF(c.x(), sheet.top() - 6), QPointF(c.x(), sheet.bottom() + 6));
+    else
+        p.drawLine(QPointF(sheet.left() - 6, c.y()), QPointF(sheet.right() + 6, c.y()));
+
+    // An arrow curling round it.
     p.setPen(QPen(mark, 2));
-    p.setBrush(mark);
-    const qreal cy = sheet.center().y();
-    const qreal r  = sheet.width() * 0.55;
+    p.setBrush(Qt::NoBrush);
 
     QPainterPath arc;
-    arc.moveTo(sheet.center().x() - r, cy);
-    arc.cubicTo(sheet.center().x() - r, cy - 26,
-                sheet.center().x() + r, cy - 26,
-                sheet.center().x() + r, cy);
-    p.setBrush(Qt::NoBrush);
-    p.drawPath(arc);
-
     QPolygonF head;
-    head << QPointF(sheet.center().x() + r, cy + 6)
-         << QPointF(sheet.center().x() + r - 6, cy - 6)
-         << QPointF(sheet.center().x() + r + 6, cy - 6);
+
+    if (sideways)
+    {
+        const qreal r = sheet.width() * 0.55;
+        arc.moveTo(c.x() - r, c.y());
+        arc.cubicTo(c.x() - r, c.y() - 26, c.x() + r, c.y() - 26, c.x() + r, c.y());
+        head << QPointF(c.x() + r, c.y() + 6)
+             << QPointF(c.x() + r - 6, c.y() - 6)
+             << QPointF(c.x() + r + 6, c.y() - 6);
+    }
+    else
+    {
+        const qreal r = sheet.height() * 0.55;
+        arc.moveTo(c.x(), c.y() - r);
+        arc.cubicTo(c.x() - 26, c.y() - r, c.x() - 26, c.y() + r, c.x(), c.y() + r);
+        head << QPointF(c.x() + 6, c.y() + r)
+             << QPointF(c.x() - 6, c.y() + r - 6)
+             << QPointF(c.x() - 6, c.y() + r + 6);
+    }
+
+    p.drawPath(arc);
     p.setBrush(mark);
     p.drawPolygon(head);
+}
+
+
+/************************************************
+
+ ************************************************/
+QString manualDuplexInstruction(ManualDuplexHandling handling)
+{
+    switch (handling)
+    {
+    case HandlingFlipSideways:
+        return QObject::tr("Turn the stack over sideways, the way you would close a book.",
+                           "Manual duplex handling, flip about the long edge");
+
+    case HandlingFlipEndOver:
+        return QObject::tr("Turn the stack over end for end, bringing the bottom edge to the top.",
+                           "Manual duplex handling, flip about the short edge");
+
+    case HandlingNoFlip:
+        return QObject::tr("Put the stack straight back without turning it over.",
+                           "Manual duplex handling, no flip");
+    }
+    return QString();
+}
+
+
+/************************************************
+
+ ************************************************/
+bool showManualDuplexPrompt(const Printer *printer, QWidget *parent)
+{
+    QDialog dialog(parent);
+    dialog.setWindowTitle(parent ? parent->windowTitle() + " " : QString());
+
+    QLabel *text = new QLabel(&dialog);
+    text->setWordWrap(true);
+
+    if (printer->duplexCalibrated())
+    {
+        // The remembered movement, shown rather than left to memory.
+        text->setText(QObject::tr("<p>One side of every sheet has been printed on <b>%1</b>.</p>"
+                                  "<p><b>%2</b> Keep them in the same order, then press Continue.</p>",
+                                  "Manual duplex prompt. %1 is the printer, %2 the remembered movement")
+                      .arg(printer->name(), manualDuplexInstruction(printer->manualDuplexHandling())));
+    }
+    else
+    {
+        // Never calibrated, so we genuinely do not know which way is right and
+        // must not pretend otherwise.
+        text->setText(QObject::tr("<p>One side of every sheet has been printed on <b>%1</b>.</p>"
+                                  "<p>Turn the pages over, put them back in the printer and press "
+                                  "Continue.</p>"
+                                  "<p><i>Printer settings can work out which way round they go, so "
+                                  "you do not have to remember.</i></p>",
+                                  "Manual duplex prompt for a printer that has not been calibrated")
+                      .arg(printer->name()));
+    }
+
+    QDialogButtonBox *buttons = new QDialogButtonBox(&dialog);
+    buttons->addButton(QDialogButtonBox::Abort);
+    QPushButton *ok = buttons->addButton(QDialogButtonBox::Ok);
+    ok->setText(QObject::tr("Continue", "Manual duplex prompt button"));
+
+    QObject::connect(buttons, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    QObject::connect(buttons, SIGNAL(rejected()), &dialog, SLOT(reject()));
+
+    QVBoxLayout *layout = new QVBoxLayout(&dialog);
+    layout->addWidget(text);
+
+    if (printer->duplexCalibrated())
+    {
+        FlipDiagram *diagram = new FlipDiagram(&dialog);
+        diagram->setHandling(printer->manualDuplexHandling());
+        layout->addWidget(diagram, 0, Qt::AlignHCenter);
+    }
+
+    layout->addWidget(buttons);
+
+    return dialog.exec() == QDialog::Accepted;
 }
 
 
@@ -206,16 +331,35 @@ void DuplexWizard::buildFlipPage()
 
     QLabel *text = new QLabel(
         tr("<p>Two sheets are printing now, marked <b>1</b> and <b>2</b>.</p>"
-           "<p>When they are done, take the whole stack out <b>without changing "
-           "its order</b>, turn it over sideways as shown, and put it back in the "
-           "paper tray.</p>"
-           "<p>Remember this movement - you will be asked for it every time you "
-           "print double-sided.</p>",
-           "Duplex calibration wizard, instruction to turn the paper over"), page);
+           "<p>Take the whole stack out <b>without changing its order</b>, put it "
+           "back in the paper tray ready to print the other side, and tell us how "
+           "you did it. PlicaPage will remember, and show you the same picture "
+           "every time you print double-sided.</p>",
+           "Duplex calibration wizard, choosing how the paper is put back"), page);
     text->setWordWrap(true);
-
     l->addWidget(text);
-    l->addWidget(new FlipDiagram(page), 0, Qt::AlignHCenter);
+
+    mHandlingSidewaysBtn = new QRadioButton(manualDuplexInstruction(HandlingFlipSideways), page);
+    mHandlingEndOverBtn  = new QRadioButton(manualDuplexInstruction(HandlingFlipEndOver), page);
+    mHandlingNoFlipBtn   = new QRadioButton(manualDuplexInstruction(HandlingNoFlip), page);
+    mHandlingSidewaysBtn->setChecked(true);
+
+    l->addWidget(mHandlingSidewaysBtn);
+    l->addWidget(mHandlingEndOverBtn);
+    l->addWidget(mHandlingNoFlipBtn);
+
+    mFlipDiagram = new FlipDiagram(page);
+    l->addWidget(mFlipDiagram, 0, Qt::AlignHCenter);
+
+    // The picture follows the choice, so the user can see what each one means
+    // before committing to it.
+    connect(mHandlingSidewaysBtn, &QRadioButton::toggled, this, [this](bool on) {
+        if (on) mFlipDiagram->setHandling(HandlingFlipSideways); });
+    connect(mHandlingEndOverBtn, &QRadioButton::toggled, this, [this](bool on) {
+        if (on) mFlipDiagram->setHandling(HandlingFlipEndOver); });
+    connect(mHandlingNoFlipBtn, &QRadioButton::toggled, this, [this](bool on) {
+        if (on) mFlipDiagram->setHandling(HandlingNoFlip); });
+
     l->addStretch();
     mPages->addWidget(page);
 }
@@ -345,6 +489,21 @@ bool DuplexWizard::printPass(int pass)
 /************************************************
 
  ************************************************/
+ManualDuplexHandling DuplexWizard::chosenHandling() const
+{
+    if (mHandlingEndOverBtn && mHandlingEndOverBtn->isChecked())
+        return HandlingFlipEndOver;
+
+    if (mHandlingNoFlipBtn && mHandlingNoFlipBtn->isChecked())
+        return HandlingNoFlip;
+
+    return HandlingFlipSideways;
+}
+
+
+/************************************************
+
+ ************************************************/
 void DuplexWizard::applyAnswers()
 {
     const bool reversed = mOrderReversedBtn->isChecked();
@@ -353,6 +512,7 @@ void DuplexWizard::applyAnswers()
 
     mTarget->setManualDuplexReversesOrder(reversed);
     mTarget->setManualFlipType(flip);
+    mTarget->setManualDuplexHandling(chosenHandling());
     mTarget->setDuplexCalibrated(true);
 
     // Manual duplex is now described by the flip edge and the stacking order.
@@ -365,9 +525,7 @@ void DuplexWizard::applyAnswers()
     mResultLabel->setText(
         tr("<p><b>%1</b> is set up.</p>"
            "<p>Its sheets come back %2, and turning them over puts the two sides "
-           "%3.</p>"
-           "<p>When you print double-sided, turn the stack over the same way you "
-           "just did.</p>",
+           "%3.</p>",
            "Duplex calibration result. %1 printer, %2 and %3 are filled in below")
         .arg(mPrinter->name())
         .arg(reversed ? tr("in reverse order", "Duplex calibration result fragment")
@@ -375,6 +533,11 @@ void DuplexWizard::applyAnswers()
         .arg(flip == FlipType::ShortEdge
              ? tr("head to toe, so one side is turned round", "Duplex calibration result fragment")
              : tr("the same way up", "Duplex calibration result fragment")));
+
+    mResultLabel->setText(mResultLabel->text() +
+        tr("<p>From now on PlicaPage will remind you: <b>%1</b></p>",
+           "Duplex calibration result, the movement that will be shown at print time")
+        .arg(manualDuplexInstruction(chosenHandling())));
 }
 
 
@@ -405,10 +568,15 @@ void DuplexWizard::next()
         if (mOverprintedBtn->isChecked())
         {
             QMessageBox::information(this, windowTitle(),
-                tr("Then the stack went back the wrong way up.\n\n"
-                   "Run this again, and this time put the sheets back without "
-                   "turning them over. It will use two more sheets of paper.",
-                   "Duplex calibration, stack was inserted the wrong way up"));
+                tr("Then the stack went back the wrong way up, and there is "
+                   "nothing to measure.\n\n"
+                   "Go back and choose a different way of putting the paper in - "
+                   "most likely \"%1\" - then try again. It will use two more "
+                   "sheets of paper.",
+                   "Duplex calibration, stack was inserted the wrong way up")
+                .arg(manualDuplexInstruction(HandlingNoFlip)));
+            mPages->setCurrentIndex(PageFlip);
+            updateButtons();
             return;
         }
 
@@ -470,8 +638,9 @@ void DuplexWizard::printVerification()
     QMessageBox dialog(this);
     dialog.setWindowTitle(windowTitle());
     dialog.setIconPixmap(QPixmap(":/48/print"));
-    dialog.setText(tr("Turn the stack over the same way as before, put it back, "
-                      "then press Continue.", "Duplex calibration verification step"));
+    dialog.setText(tr("%1 Keep them in the same order, then press Continue.",
+                      "Duplex calibration verification step. %1 is the chosen movement")
+                   .arg(manualDuplexInstruction(chosenHandling())));
     dialog.addButton(QMessageBox::Abort);
     QPushButton *btn = dialog.addButton(QMessageBox::Ok);
     btn->setText(tr("Continue", "Duplex calibration button"));

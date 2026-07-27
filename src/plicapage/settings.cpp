@@ -156,7 +156,9 @@ QString Settings::keyToString(Settings::Key key) const
     // and beginWriteArray("Profiles"), so a slash would nest a subgroup.
     case PrinterProfile_ManualFlipType:            return "ManualFlipType";
     case PrinterProfile_ManualDuplexReversesOrder: return "ManualDuplexReversesOrder";
+    case PrinterProfile_ManualDuplexHandling:      return "ManualDuplexHandling";
     case PrinterProfile_DuplexCalibrated:          return "DuplexCalibrated";
+    case PrinterProfile_DuplexCalibrationDeclined: return "DuplexCalibrationDeclined";
 
     // PrinterSettingsDialog ****************
     case PrinterSettingsDialog_Geometry:return "PrinterSettingsDialog/Geometry";

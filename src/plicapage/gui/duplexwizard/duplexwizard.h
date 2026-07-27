@@ -54,9 +54,29 @@ public:
     explicit FlipDiagram(QWidget *parent = nullptr);
     QSize sizeHint() const override;
 
+public slots:
+    void setHandling(ManualDuplexHandling handling);
+
 protected:
     void paintEvent(QPaintEvent *event) override;
+
+private:
+    ManualDuplexHandling mHandling;
 };
+
+
+/// One sentence describing @a handling, shared by the wizard and the print
+/// prompt so the two can never describe the movement differently.
+QString manualDuplexInstruction(ManualDuplexHandling handling);
+
+/**
+ * The "now turn the stack over" prompt shown midway through a real job.
+ *
+ * Shows the printer's remembered handling with the same diagram the wizard
+ * used, so the user does not have to remember which movement they calibrated.
+ * Returns false if they abort.
+ */
+bool showManualDuplexPrompt(const Printer *printer, QWidget *parent);
 
 
 /************************************************
@@ -99,6 +119,7 @@ private:
     void updateButtons();
     bool printPass(int pass);
     void applyAnswers();
+    ManualDuplexHandling chosenHandling() const;
 
     Printer *mPrinter;
     PrinterProfile *mTarget;
@@ -111,6 +132,11 @@ private:
     QRadioButton *mBarSameEdgeBtn;    ///< both bars along one edge -> long edge turn
     QRadioButton *mBarOppositeBtn;    ///< bars at opposite edges  -> short edge turn
     QRadioButton *mOverprintedBtn;    ///< second pass landed on the printed side
+
+    FlipDiagram *mFlipDiagram;
+    QRadioButton *mHandlingSidewaysBtn;
+    QRadioButton *mHandlingEndOverBtn;
+    QRadioButton *mHandlingNoFlipBtn;
 
     QLabel *mResultLabel;
     bool mCalibrated;
