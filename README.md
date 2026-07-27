@@ -104,7 +104,10 @@ They run headless; no display required.
   but it does mean you can round-trip a job through both by accident.
 - The CUPS backend finds the user's session bus by scanning `/proc`. It is
   effective but not elegant, and inherited from upstream — if the window does
-  not appear after printing, that is the first place to look.
+  not appear after printing, that is the first place to look. Submitting jobs
+  to both PlicaPage and Boomaga in the same instant has been observed to leave
+  one window unopened; the job itself is not lost, and printing again brings it
+  up. Leaving a second or two between the two jobs avoids it.
 
 ## Licence
 
