@@ -183,7 +183,7 @@ void readEnvFile()
 void cleanup()
 {
     // Remove temporary files ..............
-    QDir dir(plicapageChacheDir());
+    QDir dir(plicapageCacheDir());
     QStringList filters;
     filters << (appUUID() + "*");
     QStringList files = dir.entryList(filters, QDir::NoDotAndDotDot|QDir::Files);

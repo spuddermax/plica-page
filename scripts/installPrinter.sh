@@ -55,7 +55,7 @@ done
 
 if [ -z "${FORCE}" ]
 then
-  if [ -n "$(LC_ALL=C lpstat -h localhost -v 2>/dev/null | grep "$URI")" ] 
+  if [ -n "$(LC_ALL=C lpstat -v 2>/dev/null | grep "$URI")" ] 
   then
     echo "Looks like ${URI} already installed. Use --force option." >&2
     exit 1
@@ -63,21 +63,36 @@ then
 fi
 
 printer=${NAME}
-while $(LC_ALL=C lpstat -h localhost -v 2>/dev/null | cut -d ':' -f 1 | cut -d ' ' -f 3 | grep -q "^${printer}"\$)
+while $(LC_ALL=C lpstat -v 2>/dev/null | cut -d ':' -f 1 | cut -d ' ' -f 3 | grep -q "^${printer}"\$)
 do
   number=$(($number + 1))
   printer="${NAME}-${number}"
 done
 
-pageSize="$(LC_ALL=C paperconf 2>/dev/null)" || size=a4
+pageSize="$(LC_ALL=C paperconf 2>/dev/null)" || pageSize=a4
 
 
-lpadmin -h localhost -p "${printer}" -v ${URI} -E -m ${PPD} -o printer-is-shared=no -o PageSize=${pageSize}
-
-
-if [ -z "$(LC_ALL=C lpstat -h localhost -d 2>/dev/null | grep 'system default destination:')" ]
+# No -h localhost. That routes the request over IPP, which demands an
+# authenticated CUPS user; root is not one, so under sudo it fails with
+# "lpadmin: Unauthorized". Omitting it uses the local domain socket, where
+# cupsd authorises root by its peer credentials.
+if ! lpadmin -p "${printer}" -v ${URI} -E -m ${PPD} \
+             -o printer-is-shared=no -o PageSize=${pageSize}
 then
-  lpadmin -h localhost -d "${printer}"
+  echo "Failed to create the printer queue." >&2
+  exit 1
+fi
+
+if [ -z "$(LC_ALL=C lpstat -d 2>/dev/null | grep 'system default destination:')" ]
+then
+  lpadmin -d "${printer}"
+fi
+
+# lpadmin can report success and still not produce a usable queue, so confirm.
+if ! LC_ALL=C lpstat -v 2>/dev/null | grep -q "${URI}"
+then
+  echo "Printer ${printer} was not created." >&2
+  exit 1
 fi
 
 echo "Printer ${printer} has been installed successfully."

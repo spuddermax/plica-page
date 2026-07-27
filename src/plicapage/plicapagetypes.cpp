@@ -287,10 +287,16 @@ QString shrinkHomeDir(const QString &fileName)
 /************************************************
  *
  ************************************************/
-QString plicapageChacheDir()
+QString plicapageCacheDir()
 {
+    // A subdirectory of our own, not the bare GenericCacheLocation upstream
+    // used. Scratch files from a parallel Boomaga install land straight in
+    // ~/.cache alongside everything else; keeping ours together means a
+    // leftover is identifiable and can be cleaned up without guesswork.
     QString res = QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation);
-    res = expandHomeDir(res);
+    res = expandHomeDir(res) + QDir::separator() + APP_NAME;
+
+    QDir().mkpath(res);
     return res;
 }
 
@@ -345,7 +351,7 @@ QString genTmpFileName(const QString &suffix)
     static QAtomicInt num = 1;
 
     return QString("%1%2%3_%4%5")
-            .arg(plicapageChacheDir())
+            .arg(plicapageCacheDir())
             .arg(QDir::separator())
             .arg(appUUID())
             .arg(num.fetchAndAddRelaxed(1), 3, 10, QChar('0'))
