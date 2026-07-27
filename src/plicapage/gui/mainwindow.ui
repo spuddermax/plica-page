@@ -145,7 +145,7 @@
            <item>
             <widget class="QRadioButton" name="trimUniformBtn">
              <property name="toolTip">
-              <string comment="MainForm::Trim uniform tooltip">Crop every page to the same rectangle, so the type stays one size throughout the document.</string>
+              <string comment="MainForm::Trim uniform tooltip">Crop every page to the same rectangle, so the type stays one size throughout the document. Best for double-sided printing and booklets, where the front and back of a sheet should match.</string>
              </property>
              <property name="text">
               <string comment="MainForm::Trim uniform">Same crop for all pages</string>

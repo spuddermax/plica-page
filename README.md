@@ -17,8 +17,9 @@ the document loaded. From there you can:
   and scale what remains to fill the sheet. On a wide-margined PDF printed 4-up
   this is the difference between readable and not.
 - **Impose** 1, 2, 4 or 8 pages per sheet, or fold the document into a booklet.
-- **Print both sides** on a printer without a duplexer — it will tell you when to
-  turn the stack over.
+- **Print both sides** on a printer without a duplexer. PlicaPage splits the job
+  in two, prints one side, then waits while you turn the stack over and put it
+  back in the tray. See [Double-sided without a duplexer](#double-sided-without-a-duplexer).
 - **Combine documents.** Print a second document and it is appended to the first,
   so several sources can go out as one job.
 - **Reorder, rotate and hide** individual pages before printing.
@@ -45,6 +46,43 @@ path.
 
 Files saved by Boomaga (`*.boo`) still open. PlicaPage saves its own projects as
 `*.plica` so the two do not fight over the file association.
+
+## Double-sided without a duplexer
+
+Tick **Double-sided** and set the duplex mode in *Configure…* under the printer.
+Three options:
+
+| Setting | Use when |
+|---|---|
+| **Printer has duplexer** | The printer turns the paper itself. PlicaPage just asks CUPS for two-sided output. |
+| **Manual with reverse** | The default, and right for most printers — any printer that stacks its output **face down**, so the pile comes out in reverse order. |
+| **Manual without reverse** | Printers that stack **face up**, leaving the pile in the order it was printed. |
+
+In either manual mode, printing runs as two passes:
+
+1. One side of every sheet is printed.
+2. A dialog appears — *"When finished, turn the pages, insert them into the
+   printer and click the Continue button."* — and waits.
+3. You flip the stack, put it back in the input tray, click **Continue**, and
+   the second side is printed.
+
+PlicaPage arranges the two passes so that a straight flip is all you have to do:
+the first pass is rotated 180°, and in "with reverse" mode the second pass is
+sent in reverse order, because the printer will pull the last-printed sheet
+first. It also pads the shorter pass with a blank so both stacks are the same
+height and the sides stay paired.
+
+If the result comes out upside down or in the wrong order, you have the wrong
+one of the two manual modes — switch it and try again. The **Print in reverse
+order** checkbox is a further independent flip, for printers that also feed in
+an unusual order.
+
+**Worth knowing if you use trimming too:** prefer **Same crop for all pages**
+for double-sided work. Per-page trimming scales each page to its own content, so
+the front and back of a single sheet can end up at noticeably different sizes.
+Measured over a 65-page scanned book, the worst front-to-back size mismatch was
+1.71× with per-page trimming but only 1.14× with a shared crop — better even
+than not trimming at all (1.25×).
 
 ## How it works
 
