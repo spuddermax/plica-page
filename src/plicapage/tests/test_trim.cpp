@@ -2,9 +2,9 @@
  * (c)LGPL2+
  *
  *
- * Copyright: 2026 Spuddermax <spuddermax@gmail.com>
+ * Copyright: 2026 Matthew Daines <spuddermax@gmail.com>
  * Authors:
- *   Spuddermax <spuddermax@gmail.com>
+ *   Matthew Daines <spuddermax@gmail.com>
  *
  * This program or library is free software; you can redistribute it
  * and/or modify it under the terms of the GNU Lesser General Public

@@ -108,6 +108,19 @@ QString AboutDialog::titleText() const
 
 
 /************************************************
+ * "2026" rather than "2026-2026" until there is actually a range to show.
+ ************************************************/
+static QString copyrightLine()
+{
+    const QString first = "2026";
+    const QString now   = QDate::currentDate().toString("yyyy");
+    const QString years = (now == first) ? first : QString("%1-%2").arg(first, now);
+
+    return AboutDialog::tr("Copyright: %1 %2").arg(years, "Matthew Daines and contributors");
+}
+
+
+/************************************************
 
  ************************************************/
 QString AboutDialog::aboutText() const
@@ -119,7 +132,7 @@ QString AboutDialog::aboutText() const
                 tr("%1 provides a virtual printer for CUPS. This can be used for print preview or for print booklets.")
                     .arg(APP_DISPLAY_NAME),
 
-                tr("Copyright: %1-%2 %3").arg("2026", QDate::currentDate().toString("yyyy"), "PlicaPage contributors"),
+                copyrightLine(),
                 tr("Based on Boomaga, copyright %1 %2").arg("2012-2019", "Boomaga team"),
 
                 tr("Homepage: %1").arg("<a href='https://github.com/spuddermax/plica-page'>https://github.com/spuddermax/plica-page</a>"),
@@ -170,10 +183,14 @@ QString AboutDialog::thanksText() const
  ************************************************/
 QString AboutDialog::translationsText() const
 {
+    // Not upstream's Transifex project - this fork does not own it. Until there
+    // is a translation platform of our own, point people at the repository.
     TranslatorsInfo translatorsInfo;
-    return QString("%1<p><ul>%2</ul>").arg(
-                tr("If you want to help translate, we will be glad to see you in our translation team on <a %1>Transifex server</a>.")
-                    .arg(" href='https://www.transifex.com/projects/p/boomaga/'"),
+    return QString("%1<p>%2<p><ul>%3</ul>").arg(
+                tr("If you want to help translate, please open an issue on <a %1>GitHub</a>.")
+                    .arg(" href='https://github.com/spuddermax/plica-page/issues'"),
+                tr("These translations were contributed to Boomaga, and are carried "
+                   "here with thanks:"),
                 translatorsInfo.asHtml()
                 );
 }
