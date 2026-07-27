@@ -79,8 +79,32 @@ public:
     QSizeF paperSize(Unit unit) const;
     void setPaperSize(const QSizeF & paperSize, Unit unit);
 
+    /**
+     * Which edge the paper is turned about between the two sides.
+     *
+     * For a printer with a duplexer this is passed to CUPS. For manual duplex it
+     * is the net result of the printer's paper path and the way the user puts the
+     * stack back, and it decides whether the first pass must be rotated 180.
+     * The calibration wizard measures it.
+     */
     FlipType flipType() const { return mFlipType; }
     void setFlipType(FlipType value);
+
+    /// The same idea as flipType(), but for turning the paper by hand.
+    FlipType manualFlipType() const { return mManualFlipType; }
+    void setManualFlipType(FlipType value);
+
+    /**
+     * Whether the second manual-duplex pass reaches the sheets in the opposite
+     * order to the first. True for any printer that stacks its output face down,
+     * because the pile is then reversed when it goes back in the tray.
+     */
+    bool manualDuplexReversesOrder() const { return mManualDuplexReversesOrder; }
+    void setManualDuplexReversesOrder(bool value);
+
+    /// False until the calibration wizard has run, so it is only offered once.
+    bool duplexCalibrated() const { return mDuplexCalibrated; }
+    void setDuplexCalibrated(bool value);
 
     void readSettings();
     void saveSettings() const;
@@ -98,6 +122,9 @@ private:
     QSizeF mPaperSize;
     ColorMode mColorMode;
     FlipType mFlipType;
+    FlipType mManualFlipType;
+    bool mManualDuplexReversesOrder;
+    bool mDuplexCalibrated;
 };
 
 
@@ -158,9 +185,25 @@ public:
     FlipType flipType() const { return mCurrentProfile->flipType(); }
     void setFlipType(FlipType value) { mCurrentProfile->setFlipType(value);}
 
+    FlipType manualFlipType() const { return mCurrentProfile->manualFlipType(); }
+    void setManualFlipType(FlipType value) { mCurrentProfile->setManualFlipType(value); }
+
+    bool manualDuplexReversesOrder() const { return mCurrentProfile->manualDuplexReversesOrder(); }
+    void setManualDuplexReversesOrder(bool value) { mCurrentProfile->setManualDuplexReversesOrder(value); }
+
+    bool duplexCalibrated() const { return mCurrentProfile->duplexCalibrated(); }
+    void setDuplexCalibrated(bool value) { mCurrentProfile->setDuplexCalibrated(value); }
+
     bool canChangeDuplexType() const { return mCanChangeDuplexType; }
 
     virtual bool print(const QList<Sheet*> &sheets, const QString &jobName, bool doubleSided, int numCopies, bool collate) const;
+
+    /**
+     * Spools a ready-made PDF through the same lpr invocation print() uses.
+     * Passing doubleSided=false forces "sides=one-sided" whatever the profile
+     * says, which is what the duplex calibration prints need.
+     */
+    bool printFile(const QString &fileName, const QString &jobName, bool doubleSided, int numCopies, bool collate) const;
 
     QString deviceUri() const { return mDeviceUri; }
 

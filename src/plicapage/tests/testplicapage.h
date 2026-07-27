@@ -63,6 +63,10 @@ private slots:
     void test_BooklesSplit();
     void test_BooklesSplit_data();
 
+    void test_DuplexPasses();
+    void test_DuplexPasses_data();
+    void test_DuplexLegacyMigration();
+
     void test_Units();
     void test_InkBox();
     void test_InkBoxPdf();

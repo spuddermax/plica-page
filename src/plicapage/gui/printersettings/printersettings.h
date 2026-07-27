@@ -63,6 +63,7 @@ private slots:
     void updateWidgets();
     void updateProfile();
     void updatePreview();
+    void runDuplexWizard();
 
     void btnClicked(QAbstractButton *button);
     void addProfile();

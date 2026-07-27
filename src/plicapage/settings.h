@@ -76,6 +76,9 @@ public:
         PrinterProfile_InternalMargin,
         PrinterProfile_ColorMode,
         PrinterProfile_FlipType,
+        PrinterProfile_ManualFlipType,
+        PrinterProfile_ManualDuplexReversesOrder,
+        PrinterProfile_DuplexCalibrated,
 
         // PrinterSettingsDialog ****************
         PrinterSettingsDialog_Geometry,

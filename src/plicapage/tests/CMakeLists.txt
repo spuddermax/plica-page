@@ -49,6 +49,7 @@ set(TEST_SOURCES
     testpdfwriter.cpp
     test_infiles.cpp
     test_trim.cpp
+    test_duplex.cpp
     ../pdfparser/pdfreader.cpp
     ../pdfparser/pdfvalue.cpp
     ../pdfparser/pdfobject.cpp

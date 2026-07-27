@@ -31,6 +31,7 @@
 #include "kernel/job.h"
 #include "kernel/printer.h"
 #include "kernel/layout.h"
+#include "kernel/duplex.h"
 #include "printersettings/printersettings.h"
 #include "aboutdialog/aboutdialog.h"
 #include "actions.h"
@@ -39,6 +40,7 @@
 #include "plicapagetypes.h"
 #include "export/exporttopdf.h"
 #include "printdialog/printdialog.h"
+#include "duplexwizard/duplexwizard.h"
 #include "plicapagetypes.h"
 
 #ifdef Q_OS_MAC
@@ -584,6 +586,38 @@ void MainWindow::switchPrinterProfile()
 /************************************************
 
  ************************************************/
+void MainWindow::offerDuplexCalibration()
+{
+    QMessageBox dialog(this);
+    dialog.setWindowTitle(this->windowTitle() + " ");
+    dialog.setIconPixmap(QPixmap(":/48/print"));
+    dialog.setText(tr("<b>%1</b> has not been set up for double-sided printing yet.<p>"
+                      "PlicaPage can print two test sheets and ask you what came out, "
+                      "so it knows which way the paper has to go back in.",
+                      "Offered before the first manual double-sided print. %1 is the printer name")
+                   .arg(project->printer()->name()));
+
+    QPushButton *setUp = dialog.addButton(tr("Set up now", "Duplex calibration offer"),
+                                          QMessageBox::AcceptRole);
+    dialog.addButton(tr("Not now", "Duplex calibration offer"), QMessageBox::RejectRole);
+    dialog.exec();
+
+    if (dialog.clickedButton() != setUp)
+    {
+        // Don't nag on every job. The button in the printer settings stays.
+        project->printer()->setDuplexCalibrated(true);
+        project->printer()->saveSettings();
+        return;
+    }
+
+    if (DuplexWizard::execute(project->printer(), project->printer()->currentProfile(), this))
+        project->printer()->saveSettings();
+}
+
+
+/************************************************
+
+ ************************************************/
 void MainWindow::switchTrimMode()
 {
     project->setTrimUniform(ui->trimUniformBtn->isChecked());
@@ -630,7 +664,7 @@ QMessageBox *MainWindow::showPrintDialog(const QString &text)
 {
     QMessageBox *infoDialog = new QMessageBox(this);
     infoDialog->setWindowTitle(this->windowTitle() + " ");
-    infoDialog->setIconPixmap(QPixmap(":/images/print-48x48"));
+    infoDialog->setIconPixmap(QPixmap(":/48/print"));
     infoDialog->setStandardButtons(QMessageBox::NoButton);
 
     infoDialog->setText(text);
@@ -680,6 +714,11 @@ bool MainWindow::print(uint count, bool collate)
     bool split = project->doubleSided() &&
                  project->printer()->duplexType() != DuplexAuto;
 
+    // Which way the paper has to go back in is a property of the printer that
+    // nobody can know without trying it. Offer to find out, once per profile.
+    if (split && !project->printer()->duplexCalibrated())
+        offerDuplexCalibration();
+
     if (split)
     {
         Project::PagesOrder order_1;
@@ -689,46 +728,22 @@ bool MainWindow::print(uint count, bool collate)
         bool rotate_1 = false;
         bool rotate_2 = false;
 
-        if (project->printer()->duplexType() == DuplexManual)
-        {
-            if (!project->printer()->reverseOrder())
-            {
-                order_1 = Project::ForwardOrder;
-                order_2 = Project::ForwardOrder;
-                pagesType_1 = Project::OddPages;
-                pagesType_2 = Project::EvenPages;
-            }
-            else
-            {
-                order_1 = Project::BackOrder;
-                order_2 = Project::BackOrder;
-                pagesType_1 = Project::EvenPages;
-                pagesType_2 = Project::OddPages;
-            }
+        // The two facts the calibration wizard measures - which edge the sheet
+        // gets turned about, and whether the stack comes back reversed - used to
+        // be conflated into DuplexType, which could only express two of the four
+        // combinations printers actually produce.
+        const DuplexPasses passes = calcDuplexPasses(
+                    project->printer()->manualFlipType(),
+                    project->printer()->manualDuplexReversesOrder(),
+                    project->printer()->reverseOrder(),
+                    isLandscape(project->rotation()));
 
-            rotate_1 = isLandscape(project->rotation());
-            rotate_2 = false;
-        }
-        else
-        {
-            if (!project->printer()->reverseOrder())
-            {
-                order_1 = Project::ForwardOrder;
-                order_2 = Project::BackOrder;
-                pagesType_1 = Project::OddPages;
-                pagesType_2 = Project::EvenPages;
-            }
-            else
-            {
-                order_1 = Project::BackOrder;
-                order_2 = Project::ForwardOrder;
-                pagesType_1 = Project::EvenPages;
-                pagesType_2 = Project::OddPages;
-            }
-
-            rotate_1 = isPortrate(project->rotation());
-            rotate_2 = false;
-        }
+        pagesType_1 = passes.pages1;
+        pagesType_2 = passes.pages2;
+        order_1     = passes.order1;
+        order_2     = passes.order2;
+        rotate_1    = passes.rotate1;
+        rotate_2    = false;
 
          keeper.sheets_1 = project->selectSheets(pagesType_1, order_1);
          keeper.sheets_2 = project->selectSheets(pagesType_2, order_2);
@@ -774,7 +789,7 @@ bool MainWindow::print(uint count, bool collate)
          {
              QMessageBox dialog(this);
              dialog.setWindowTitle(this->windowTitle() + " ");
-             dialog.setIconPixmap(QPixmap(":/images/print-48x48"));
+             dialog.setIconPixmap(QPixmap(":/48/print"));
 
              dialog.setText(tr("Print the odd pages on %1.<p>"
                                "When finished, turn the pages, insert them into the printer<br>"

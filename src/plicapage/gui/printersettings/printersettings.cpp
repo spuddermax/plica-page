@@ -32,6 +32,7 @@
 #include <QDoubleSpinBox>
 #include <QMessageBox>
 #include "settings.h"
+#include "gui/duplexwizard/duplexwizard.h"
 
 
 class ProfileItem: public QStandardItem
@@ -122,9 +123,12 @@ PrinterSettings::PrinterSettings(QWidget *parent) :
     ui->topMarginSpin->installEventFilter(this);
     ui->bottomMarginSpin->installEventFilter(this);
     ui->internalMarginSpin->installEventFilter(this);
-    ui->duplexTypeComboBox->addItem(tr("Printer has duplexer"), DuplexAuto);
-    ui->duplexTypeComboBox->addItem(tr("Manual with reverse (suitable for most printers)"), DuplexManualReverse);
-    ui->duplexTypeComboBox->addItem(tr("Manual without reverse"), DuplexManual);
+    // Two entries, not the old three. "Manual with reverse" and "Manual without
+    // reverse" each bundled a flip edge together with a stacking order, which
+    // meant two of the four combinations printers actually produce had no
+    // setting at all. Those are now separate, and the wizard measures them.
+    ui->duplexTypeComboBox->addItem(tr("Printer turns the paper over itself"), DuplexAuto);
+    ui->duplexTypeComboBox->addItem(tr("I turn the paper over by hand"), DuplexManual);
 
     ui->colorModeCombo->addItem(tr("Default"), ColorModeAuto);
     ui->colorModeCombo->addItem(tr("Force grayscale"), ColorModeGrayscale);
@@ -194,6 +198,9 @@ PrinterSettings::PrinterSettings(QWidget *parent) :
 
     connect(ui->flipShortEdgeCheck, SIGNAL(clicked(bool)),
             this, SLOT(updateProfile()));
+
+    connect(ui->calibrateButton, SIGNAL(clicked()),
+            this, SLOT(runDuplexWizard()));
 
     restoreGeometry(settings->value(Settings::PrinterSettingsDialog_Geometry).toByteArray());
 }
@@ -295,10 +302,15 @@ void PrinterSettings::updateProfile()
 
     v = ui->colorModeCombo->itemData(ui->colorModeCombo->currentIndex());
     profile->setColorMode(static_cast<ColorMode>(v.toInt()));
-    if (ui->flipShortEdgeCheck->isChecked())
-        profile->setFlipType(FlipType::ShortEdge);
+    // The radios show whichever flip applies to the selected duplex mode: the
+    // duplexer's for automatic, the user's own for manual. They are stored
+    // separately because their sensible defaults differ.
+    const FlipType flip = ui->flipShortEdgeCheck->isChecked() ? FlipType::ShortEdge
+                                                              : FlipType::LongEdge;
+    if (profile->duplexType() == DuplexAuto)
+        profile->setFlipType(flip);
     else
-        profile->setFlipType(FlipType::LongEdge);
+        profile->setManualFlipType(flip);
 }
 
 
@@ -323,9 +335,13 @@ void PrinterSettings::updateWidgets()
     ui->bottomMarginSpin->setValue(profile->bottomMargin(mUnit));
     ui->internalMarginSpin->setValue(profile->internalMargin(mUnit));
 
-    bool enable = ui->duplexTypeComboBox->currentData().toInt() == DuplexAuto;
-    ui->flipLongEdgeCheck->setEnabled(enable);
-    ui->flipShortEdgeCheck->setEnabled(enable);
+    // The flip edge matters either way now: with a duplexer it is passed to
+    // CUPS, and by hand it decides whether the first pass is turned round. Only
+    // the wizard is duplexer-specific.
+    const bool manual = ui->duplexTypeComboBox->currentData().toInt() != DuplexAuto;
+    ui->flipLongEdgeCheck->setEnabled(true);
+    ui->flipShortEdgeCheck->setEnabled(true);
+    ui->calibrateButton->setEnabled(manual);
 
     if (mPrinter->isSupportColor())
     {
@@ -339,8 +355,10 @@ void PrinterSettings::updateWidgets()
         ui->colorModeCombo->setCurrentIndex(0);
     }
 
-    ui->flipLongEdgeCheck-> setChecked(profile->flipType() == FlipType::LongEdge);
-    ui->flipShortEdgeCheck->setChecked(profile->flipType() == FlipType::ShortEdge);
+    const FlipType shownFlip = (profile->duplexType() == DuplexAuto)
+            ? profile->flipType() : profile->manualFlipType();
+    ui->flipLongEdgeCheck-> setChecked(shownFlip == FlipType::LongEdge);
+    ui->flipShortEdgeCheck->setChecked(shownFlip == FlipType::ShortEdge);
 
     updatePreview();
 }
@@ -417,6 +435,25 @@ void PrinterSettings::resetToDefault()
     profile->setRightMargin(   defaultCupsProfile->rightMargin(mUnit),    mUnit);
     profile->setInternalMargin(defaultCupsProfile->internalMargin(mUnit), mUnit);
     updateWidgets();
+}
+
+
+/************************************************
+
+ ************************************************/
+void PrinterSettings::runDuplexWizard()
+{
+    if (!mPrinter)
+        return;
+
+    // Commit what is on screen first, so the wizard prints with the margins and
+    // paper the user is currently looking at rather than the last saved ones.
+    updateProfile();
+
+    // Into the selected profile's own copy: this dialog pushes those copies
+    // back to the printer on OK, so anything written elsewhere is discarded.
+    if (DuplexWizard::execute(mPrinter, currentProfile(), this))
+        updateWidgets();
 }
 
 

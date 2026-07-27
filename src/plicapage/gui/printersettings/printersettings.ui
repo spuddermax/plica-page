@@ -105,6 +105,16 @@
               </property>
              </widget>
             </item>
+            <item row="3" column="0" colspan="2">
+             <widget class="QPushButton" name="calibrateButton">
+              <property name="toolTip">
+               <string comment="Duplex calibration button tooltip">Prints two sheets and asks what came out, to work out which way the paper has to go back in.</string>
+              </property>
+              <property name="text">
+               <string comment="Duplex calibration button in printer settings">Set up double-sided printing...</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>
@@ -310,6 +320,9 @@
  <tabstops>
   <tabstop>tabWidget</tabstop>
   <tabstop>duplexTypeComboBox</tabstop>
+  <tabstop>flipLongEdgeCheck</tabstop>
+  <tabstop>flipShortEdgeCheck</tabstop>
+  <tabstop>calibrateButton</tabstop>
   <tabstop>reverseOrderCbx</tabstop>
   <tabstop>colorModeCombo</tabstop>
   <tabstop>topMarginSpin</tabstop>

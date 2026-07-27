@@ -152,6 +152,11 @@ QString Settings::keyToString(Settings::Key key) const
     case PrinterProfile_InternalMargin: return "InternalMargin";
     case PrinterProfile_ColorMode:      return "ColorMode";
     case PrinterProfile_FlipType:       return "FlipType";
+    // Bare names: these are read and written inside beginGroup("Printer_<name>")
+    // and beginWriteArray("Profiles"), so a slash would nest a subgroup.
+    case PrinterProfile_ManualFlipType:            return "ManualFlipType";
+    case PrinterProfile_ManualDuplexReversesOrder: return "ManualDuplexReversesOrder";
+    case PrinterProfile_DuplexCalibrated:          return "DuplexCalibrated";
 
     // PrinterSettingsDialog ****************
     case PrinterSettingsDialog_Geometry:return "PrinterSettingsDialog/Geometry";

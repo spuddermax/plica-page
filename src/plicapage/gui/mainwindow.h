@@ -56,6 +56,7 @@ public:
 private slots:
     void switchLayout();
     void switchPrinterProfile();
+    void offerDuplexCalibration();
     void switchTrimMode();
     void trimPaddingChanged();
 

@@ -51,6 +51,7 @@ set(HEADERS
     kernel/cupsprinteroptions.h
     kernel/pdfprocessor.h
     kernel/pagetrimmer.h
+    kernel/duplex.h
 
     iofiles/infile.h
     iofiles/boofile.h
@@ -66,6 +67,8 @@ set(HEADERS
     gui/export/exporttopdf.h
     gui/printdialog/printdialog.h
     gui/printersettings/printersettings.h
+    gui/duplexwizard/duplexwizard.h
+    gui/duplexwizard/calibrationsheet.h
     gui/widgets/pagelistview.h
     gui/widgets/joblistview.h
     gui/widgets/layoutradiobutton.h
@@ -103,6 +106,7 @@ set(SOURCES
     kernel/printer.cpp
     kernel/pdfprocessor.cpp
     kernel/pagetrimmer.cpp
+    kernel/duplex.cpp
     
     iofiles/infile.cpp
     iofiles/pdffile.cpp
@@ -118,6 +122,8 @@ set(SOURCES
     gui/export/exporttopdf.cpp
     gui/printdialog/printdialog.cpp
     gui/printersettings/printersettings.cpp
+    gui/duplexwizard/duplexwizard.cpp
+    gui/duplexwizard/calibrationsheet.cpp
     gui/widgets/pagelistview.cpp
     gui/widgets/joblistview.cpp
     gui/widgets/layoutradiobutton.cpp

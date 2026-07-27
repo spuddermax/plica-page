@@ -38,6 +38,10 @@
 #define A4_HEIGHT_PT    842
 #define A4_WIDTH_PT     595
 
+// Uncomment to log the lpr command line and open each job in a viewer instead
+// of relying on the printer. Must be visible to both print() and printFile().
+//#define DEBUG_PRINT
+
 // toUnit()/fromUnit() live in plicapagetypes.cpp, alongside the Unit enum.
 
 
@@ -50,12 +54,20 @@ PrinterProfile::PrinterProfile():
     mTopMargin(0),
     mBottomMargin(0),
     mInternalMargin(14),
-    mDuplexType(DuplexManualReverse),
+    mDuplexType(DuplexManual),
     mDrawBorder(false),
     mReverseOrder(false),
     mPaperSize(QSizeF(A4_WIDTH_PT, A4_HEIGHT_PT)),
     mColorMode(ColorModeAuto),
-    mFlipType(FlipType::LongEdge)
+    mFlipType(FlipType::LongEdge),
+    // Kept separate from mFlipType, which belongs to the duplexer. The two want
+    // different defaults: long edge is the normal choice for a duplexer, while
+    // short edge plus reversed order is what the old DuplexManualReverse meant,
+    // and that was the default duplex type. Sharing one field would regress one
+    // or the other.
+    mManualFlipType(FlipType::ShortEdge),
+    mManualDuplexReversesOrder(true),
+    mDuplexCalibrated(false)
 {
 
 }
@@ -78,6 +90,11 @@ PrinterProfile &PrinterProfile::operator=(const PrinterProfile &other)
     mPaperSize      = other.mPaperSize;
     mColorMode      = other.mColorMode;
     mFlipType       = other.mFlipType;
+    mManualFlipType = other.mManualFlipType;
+    // This operator is hand-written, and PrinterSettings copies profiles by
+    // value on every OK. A member missing from here is silently discarded.
+    mManualDuplexReversesOrder = other.mManualDuplexReversesOrder;
+    mDuplexCalibrated          = other.mDuplexCalibrated;
 
     return *this;
 }
@@ -212,6 +229,33 @@ void PrinterProfile::setReverseOrder(bool value)
 /************************************************
  *
  ************************************************/
+void PrinterProfile::setManualFlipType(FlipType value)
+{
+    mManualFlipType = value;
+}
+
+
+/************************************************
+ *
+ ************************************************/
+void PrinterProfile::setManualDuplexReversesOrder(bool value)
+{
+    mManualDuplexReversesOrder = value;
+}
+
+
+/************************************************
+ *
+ ************************************************/
+void PrinterProfile::setDuplexCalibrated(bool value)
+{
+    mDuplexCalibrated = value;
+}
+
+
+/************************************************
+ *
+ ************************************************/
 void PrinterProfile::setColorMode(ColorMode value)
 {
     mColorMode = value;
@@ -271,6 +315,46 @@ void PrinterProfile::readSettings()
     s = settings->value(Settings::PrinterProfile_FlipType, flipTypeToStr(mFlipType)).toString();
     mFlipType = strToFlipType(s);
 
+    // Manual duplex used to be described by DuplexType alone, which tied the
+    // flip edge to the stacking order and so could only express two of the four
+    // combinations that actually occur. Those two facts are now stored
+    // separately. A profile written before that change has no key for the new
+    // one, so derive it from the old enum:
+    //
+    //     DuplexManual        -> long edge,  order preserved
+    //     DuplexManualReverse -> short edge, order reversed
+    //
+    // DuplexCalibrated is absent in such a profile too, so the wizard will offer
+    // itself once and can then record something the old model could not hold.
+    s = settings->value(Settings::PrinterProfile_ManualFlipType, flipTypeToStr(mManualFlipType)).toString();
+    mManualFlipType = strToFlipType(s);
+
+    const QVariant reverses = settings->value(Settings::PrinterProfile_ManualDuplexReversesOrder);
+    const QVariant storedDuplex = settings->value(Settings::PrinterProfile_DuplexType);
+
+    if (reverses.isValid())
+    {
+        mManualDuplexReversesOrder = reverses.toBool();
+    }
+    else if (storedDuplex.isValid())
+    {
+        const DuplexType legacy = strToDuplexType(storedDuplex.toString());
+        mManualDuplexReversesOrder = (legacy == DuplexManualReverse);
+        mManualFlipType = (legacy == DuplexManualReverse) ? FlipType::ShortEdge
+                                                          : FlipType::LongEdge;
+    }
+    // Neither key present means a brand new profile, so the constructor's
+    // defaults stand.
+
+    // Both legacy manual values now mean the same thing - "the user turns the
+    // paper" - with the difference carried by the two fields above. Collapse it,
+    // or the settings dialog would be asked to show a duplex type that is no
+    // longer in its list.
+    if (mDuplexType == DuplexManualReverse)
+        mDuplexType = DuplexManual;
+
+    mDuplexCalibrated = settings->value(Settings::PrinterProfile_DuplexCalibrated,
+                                        mDuplexCalibrated).toBool();
 }
 
 
@@ -289,6 +373,9 @@ void PrinterProfile::saveSettings() const
     settings->setValue(Settings::PrinterProfile_DuplexType,     duplexTypeToStr(mDuplexType));
     settings->setValue(Settings::PrinterProfile_DrawBorder,     mDrawBorder);
     settings->setValue(Settings::PrinterProfile_ReverseOrder,   mReverseOrder);
+    settings->setValue(Settings::PrinterProfile_ManualFlipType, flipTypeToStr(mManualFlipType));
+    settings->setValue(Settings::PrinterProfile_ManualDuplexReversesOrder, mManualDuplexReversesOrder);
+    settings->setValue(Settings::PrinterProfile_DuplexCalibrated,          mDuplexCalibrated);
     settings->setValue(Settings::PrinterProfile_ColorMode,      colorModeToStr(mColorMode));
     settings->setValue(Settings::PrinterProfile_FlipType,       flipTypeToStr(mFlipType));
 }
@@ -503,6 +590,33 @@ bool Printer::print(const QList<Sheet *> &sheets, const QString &jobName, bool d
 
     project->writeDocument(sheets, file);
 
+#ifndef DEBUG_PRINT
+    return printFile(file, jobName, doubleSided, numCopies, collate);
+#else
+    printFile(file, jobName, doubleSided, numCopies, collate);
+
+    QString fileName;
+    {
+        QTemporaryFile f;
+        f.open();
+        fileName = f.fileName();
+        f.close();
+    }
+
+    project->writeDocument(sheets, fileName);
+    QProcess::startDetached("okular", QStringList() << fileName);
+    return true;
+#endif
+}
+
+
+/************************************************
+ * Spools a PDF that is already on disk. Split out of print() so the duplex
+ * calibration sheets, which are drawn rather than composed from Sheets, can go
+ * to the printer the same way a real job does.
+ ************************************************/
+bool Printer::printFile(const QString &fileName, const QString &jobName, bool doubleSided, int numCopies, bool collate) const
+{
     QStringList args;
     args << "-P" << name();                       // Prints files to the named printer.
     args << "-#" << QString("%1").arg(numCopies); // Sets the number of copies to print
@@ -546,33 +660,20 @@ bool Printer::print(const QList<Sheet *> &sheets, const QString &jobName, bool d
     }
     // Grayscale/color printing .................
 
-    args << file.toLocal8Bit();
+    args << fileName.toLocal8Bit();
 
-//#define DEBUG_PRINT
-#ifndef DEBUG_PRINT
-    QProcess proc;
-    proc.startDetached("lpr", args);
-    return true;
-#else
+#ifdef DEBUG_PRINT
     QString s = "lpr";
     foreach (QString a, args)
     {
         s += " \"" + a + "\"";
     }
-    qDebug(s.toLocal8Bit());
-
-    QString fileName;
-    {
-        QTemporaryFile f;
-        f.open();
-        fileName = f.fileName();
-        f.close();
-    }
-
-    project->writeDocument(sheets, fileName);
-    QProcess::startDetached("okular", QStringList() << fileName);
-    return true;
+    qDebug("%s", s.toLocal8Bit().data());
 #endif
+
+    QProcess proc;
+    proc.startDetached("lpr", args);
+    return true;
 }
 
 
