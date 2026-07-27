@@ -22,5 +22,5 @@ dbus-send \
 	--session \
 	--type=method_call \
 	--print-reply \
-	--dest=org.boomaga /boomaga org.boomaga.add \
+	--dest=org.plicapage /plicapage org.plicapage.add \
 	string:"${FILE}"

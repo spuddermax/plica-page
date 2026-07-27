@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+   <mime-type type="application/x-plicapage-boo">
+      <comment>PlicaPage project</comment>
+      <comment xml:lang="en">PlicaPage project</comment>
+      <!-- Deliberately *.plica, not *.boo: Boomaga registers the .boo glob, and
+           two packages claiming it would fight over the double-click handler.
+           PlicaPage still opens .boo files - see MimeType= in the desktop entry. -->
+      <glob pattern="*.plica"/>
+      <icon name="plicapage-project"/>
+   </mime-type> 
+</mime-info>

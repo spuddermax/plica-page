@@ -28,7 +28,7 @@ cmake_policy(SET CMP0028 NEW)
 
 project(agent)
 
-set(MAC_APP_ID    "io.github.Boomaga")
+set(MAC_APP_ID    "io.github.PlicaPage")
 add_definitions(-DMAC_APP_ID=\"${MAC_APP_ID}\")
 
 set(HEADERS

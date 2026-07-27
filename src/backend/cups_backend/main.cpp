@@ -132,13 +132,13 @@ static bool createJobFile(istream &src, const string &destFile, const Args &args
     Log::debug("Create job file %s", destFile.c_str());
 
     ofstream dest(destFile, ios::binary | ios::trunc);
-    dest << "\033CUPS_BOOMAGA\n";
+    dest << "\033CUPS_PLICAPAGE\n";
     dest << "JOB="     << escapeString(args.jobID)   << "\n";
     dest << "USER="    << escapeString(args.user)    << "\n";
     dest << "TITLE="   << escapeString(args.title)   << "\n";
     dest << "COUNT="   << args.count                 << "\n";
     dest << "OPTIONS=" << escapeString(args.options) << "\n";
-    dest << "CUPS_BOOMAGA_DATA\n";
+    dest << "CUPS_PLICAPAGE_DATA\n";
     dest << src.rdbuf();
     dest.close();
 
@@ -178,7 +178,7 @@ string dirname(const string &path)
  ************************************************/
 int main(int argc, char *argv[])
 {
-    Log::setPrefix("Boomaga backend");
+    Log::setPrefix("PlicaPage backend");
     if (argc == 1)
     {
         // Output "device discovery" information on stdout:
@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
 
     if (argc < 6)
     {
-        cerr << "Usage: boomaga job-id user title copies options [file]" << endl;
+        cerr << "Usage: plicapage job-id user title copies options [file]" << endl;
         return CUPS_BACKEND_FAILED;
     }
 
@@ -221,10 +221,13 @@ int main(int argc, char *argv[])
 #ifdef __APPLE__
     const string baseDir = MAC_SPOOL_DIR;
 #else
+    // Must not be shared with a parallel Boomaga install: both apps delete any
+    // spool file they load, so a shared directory means one can consume and
+    // then destroy the other's print job.
     char *cupsCacheDir = getenv("CUPS_CACHEDIR");
     const string baseDir = cupsCacheDir ?
-                dirname(cupsCacheDir) + "/boomaga" :
-                "/var/cache/boomaga";
+                dirname(cupsCacheDir) + "/" + SPOOL_DIR_NAME :
+                "/var/cache/" SPOOL_DIR_NAME;
 #endif
 
     string dir = mkUserDir(baseDir, args.user);
@@ -249,7 +252,7 @@ int main(int argc, char *argv[])
     }
 
 #ifdef __APPLE__
-    // Start agent from Boomaga.app
+    // Start agent from PlicaPage.app
 
     string startFile = baseDir + "/.start";
     ofstream dest(startFile, ios::binary | ios::trunc);
@@ -277,13 +280,13 @@ int main(int argc, char *argv[])
           path.append(":").append(envPath);
     setenv("PATH", path.c_str(), 1);
 
-    execlp("boomaga",
-           "boomaga",
+    execlp(GUI_BINARY_NAME,
+           GUI_BINARY_NAME,
            "--started-from-cups",
            booFile.c_str(),
            NULL);
 
-    Log::error("run boomaga GUI error: %s", strerror(errno));
+    Log::error("run " GUI_BINARY_NAME " GUI error: %s", strerror(errno));
     return CUPS_BACKEND_FAILED;
 #endif
 

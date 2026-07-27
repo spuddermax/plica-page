@@ -50,7 +50,7 @@ static const char* PATTERN = "*.cboo." AUTOREMOVE_EXT;
 static void usage()
 {
     cerr << "Usage: agent SOURCE_DIRECTORY" << endl;
-    cerr << "  example: agent /var/spool/io.github.Boomaga " << endl;
+    cerr << "  example: agent /var/spool/io.github.PlicaPage " << endl;
 }
 
 
@@ -131,7 +131,7 @@ void startApplication(const char *appID, const string &file)
  ************************************************/
 int main(int argc, char *argv[])
 {
-    Log::setPrefix("Boomaga agent");
+    Log::setPrefix("PlicaPage agent");
     Log::setWriteTime(true);
 
     if (argc < 2 || !strlen(argv[1]))

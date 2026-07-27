@@ -1,13 +1,13 @@
 
-project(boomaga_selinux)
+project(plicapage_selinux)
 
 
 option(SELINUX "Build SELinux rules." $ENV{SELINUX})
 
 
-configure_file(boomaga.fc.in boomaga.fc @ONLY)
-configure_file(boomaga.if.in boomaga.if @ONLY)
-configure_file(boomaga.te.in boomaga.te @ONLY)
+configure_file(plicapage.fc.in plicapage.fc @ONLY)
+configure_file(plicapage.if.in plicapage.if @ONLY)
+configure_file(plicapage.te.in plicapage.te @ONLY)
 
 
 
@@ -29,7 +29,7 @@ function(buildSelinux _APP _SELINUX_VARIANT)
 
     file(WRITE  "${postinstall}"
         "/usr/sbin/semodule -s ${_SELINUX_VARIANT} -i ${pp_file} &> /dev/null || :\n"
-        "/sbin/fixfiles restore ${CUPS_BACKEND_DIR}/boomaga || :\n"
+        "/sbin/fixfiles restore ${CUPS_BACKEND_DIR}/plicapage || :\n"
     )
 
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${_APP}.pp.${_SELINUX_VARIANT}"
@@ -45,8 +45,8 @@ endfunction()
 
 if(SELINUX)
     
-    buildSelinux("boomaga" "mls")
-    buildSelinux("boomaga" "targeted")
+    buildSelinux("plicapage" "mls")
+    buildSelinux("plicapage" "targeted")
 else()
     status_message("For building SELinux rules use -DSELINUX=Yes option.")
 endif()

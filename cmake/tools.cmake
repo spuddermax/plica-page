@@ -15,7 +15,11 @@ macro(setByDefault VAR_NAME VAR_VALUE)
   if (NOT DEFINED ${VAR_NAME})
     set (${VAR_NAME} ${VAR_VALUE})
   endif()
-  add_definitions(-D${VAR_NAME}=\"${VAR_VALUE}\")
+  # Must be the resolved variable, not VAR_VALUE. Using the macro argument
+  # compiles in the default even when the caller overrode it on the command
+  # line, so install paths would follow -D while the compiled-in strings did
+  # not - the backend would advertise one URI scheme and test against another.
+  add_definitions(-D${VAR_NAME}=\"${${VAR_NAME}}\")
 endmacro()
 
 

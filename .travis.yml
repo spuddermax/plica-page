@@ -20,4 +20,4 @@ script:
   - cd build
   - cmake -DBUILD_TESTS=Yes ..
   - make -j8
-  - src/boomaga/tests/boomaga_test
+  - src/plicapage/tests/plicapage_test

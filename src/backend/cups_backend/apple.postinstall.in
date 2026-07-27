@@ -1,5 +1,5 @@
 #!/bin/sh
-# [postinst] for boomaga
+# [postinst] for plicapage
 # COPYRIGHT
 # © 2019 Boomaga team https://github.com/Boomaga/boomaga
 #    Alexander Sokoloff <sokoloff.a@gmail.com>
@@ -8,8 +8,8 @@ set -e
 
 
 # Sanitize ownerships and permissions.
-chmod 0700 /usr/libexec/cups/backend/boomaga
-chown root /usr/libexec/cups/backend/boomaga
+chmod 0700 /usr/libexec/cups/backend/plicapage
+chown root /usr/libexec/cups/backend/plicapage
 
 # Wait until CUPS has reloaded its configuration.
 if lpstat -h localhost -r 2>/dev/null | grep -q not; then
@@ -25,10 +25,10 @@ if lpstat -h localhost -r 2>/dev/null | grep -q not; then
 fi
 
 # Create a queue if we have none yet.
-if  ! lpstat -v boomaga 1>/dev/null 2>/dev/null; then
-	queue=Boomaga
+if  ! lpstat -v plicapage 1>/dev/null 2>/dev/null; then
+	queue=PlicaPage
 	# Create the queue.
-	lpadmin -p $queue -v boomaga:/ -m /@CUPS_PPD_DIR@/boomaga.ppd -o printer-is-shared=no -E 2>/dev/null
+	lpadmin -p $queue -v plicapage:/ -m /@CUPS_PPD_DIR@/plicapage.ppd -o printer-is-shared=no -E 2>/dev/null
 	# Enable the queue.
 	#cupsenable $queue 2>/dev/null
 	#cupsaccept $queue 2>/dev/null

@@ -14,7 +14,7 @@ cd ${BUILD_DIR}
 cmake \
 	-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}/usr \
 	-DCUPS_BACKEND_DIR=${INSTALL_DIR}/usr/lib/cups/backend \
-	-DCUPS_PPD_DIR=${INSTALL_DIR}/usr/share/ppd/boomaga \
+	-DCUPS_PPD_DIR=${INSTALL_DIR}/usr/share/ppd/plicapage \
 	-DDBUS_MACINE_ID_DIR=${INSTALL_DIR}/var/lib/dbus \
 	..
 

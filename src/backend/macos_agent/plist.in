@@ -4,7 +4,7 @@
 <dict>
 
   <key>Label</key>
-  <string>io.github.Boomaga.agent</string>
+  <string>io.github.PlicaPage.agent</string>
 
   <key>LimitLoadToSessionType</key>
   <array>

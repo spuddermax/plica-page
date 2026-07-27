@@ -1,0 +1,572 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1188</width>
+    <height>830</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string notr="true">MainWindow</string>
+  </property>
+  <property name="dockOptions">
+   <set>QMainWindow::AnimatedDocks</set>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout_6">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>1</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QSplitter" name="splitter">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="childrenCollapsible">
+       <bool>false</bool>
+      </property>
+      <widget class="QWidget" name="optionsPanel" native="true">
+       <property name="maximumSize">
+        <size>
+         <width>700</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QGroupBox" name="layoutBox">
+          <property name="title">
+           <string>Layout</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <widget class="LayoutRadioButton" name="layout1UpBtn">
+             <property name="text">
+              <string>1 up</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="LayoutRadioButton" name="layout2UpBtn">
+             <property name="text">
+              <string>2 up</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="LayoutRadioButton" name="layout4UpHorizBtn">
+             <property name="text">
+              <string>4 up horizontal</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="LayoutRadioButton" name="layout4UpVertBtn">
+             <property name="text">
+              <string>4 up vertical</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="LayoutRadioButton" name="layout8UpHorizBtn">
+             <property name="text">
+              <string>8 up horizontal</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="LayoutRadioButton" name="layout8UpVertBtn">
+             <property name="text">
+              <string>8 up vertical</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="LayoutRadioButton" name="layoutBookletBtn">
+             <property name="text">
+              <string>Booklet</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="doubleSidedCbx">
+             <property name="toolTip">
+              <string comment="MainForm::Double-sided checkbox tooltip">Print on both sides of a sheet.</string>
+             </property>
+             <property name="text">
+              <string comment="MainForm::Double-sided checkbox">Double-sided</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="trimBox">
+          <property name="toolTip">
+           <string comment="MainForm::Trim group box tooltip">Cut the blank margins off each page and scale what is left to fill the sheet.</string>
+          </property>
+          <property name="title">
+           <string comment="MainForm::Trim group box">Trim whitespace</string>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_5">
+           <item>
+            <widget class="QRadioButton" name="trimPerPageBtn">
+             <property name="toolTip">
+              <string comment="MainForm::Trim per page tooltip">Give every page its own crop. Removes the most whitespace, but a sparse page ends up with much larger type than a full one.</string>
+             </property>
+             <property name="text">
+              <string comment="MainForm::Trim per page">Each page separately</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QRadioButton" name="trimUniformBtn">
+             <property name="toolTip">
+              <string comment="MainForm::Trim uniform tooltip">Crop every page to the same rectangle, so the type stays one size throughout the document.</string>
+             </property>
+             <property name="text">
+              <string comment="MainForm::Trim uniform">Same crop for all pages</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="trimPaddingLayout">
+             <item>
+              <widget class="QLabel" name="trimPaddingLbl">
+               <property name="text">
+                <string comment="MainForm::Trim padding label">Padding:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="trimPaddingSpin">
+               <property name="toolTip">
+                <string comment="MainForm::Trim padding tooltip">Blank space kept around the trimmed content.</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="trimPaddingSpacer">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="printerBox">
+          <property name="title">
+           <string>Printer</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_4">
+           <item>
+            <widget class="PrintersComboBox" name="printersCombo"/>
+           </item>
+           <item>
+            <widget class="QToolButton" name="printerConfigBtn">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="text">
+              <string>Configure...</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTabWidget" name="pagesViewTab">
+          <property name="tabPosition">
+           <enum>QTabWidget::South</enum>
+          </property>
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <property name="documentMode">
+           <bool>false</bool>
+          </property>
+          <widget class="QWidget" name="jobs">
+           <attribute name="title">
+            <string>Jobs</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="JobListView" name="jobsView">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="acceptDrops">
+               <bool>true</bool>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::NoFrame</enum>
+              </property>
+              <property name="dragEnabled">
+               <bool>true</bool>
+              </property>
+              <property name="dragDropMode">
+               <enum>QAbstractItemView::InternalMove</enum>
+              </property>
+              <property name="defaultDropAction">
+               <enum>Qt::MoveAction</enum>
+              </property>
+              <property name="alternatingRowColors">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="subbooklets">
+           <attribute name="title">
+            <string>Sub-booklets</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_5">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="SubBookletView" name="subBookletView">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="acceptDrops">
+               <bool>true</bool>
+              </property>
+              <property name="frameShape">
+               <enum>QFrame::NoFrame</enum>
+              </property>
+              <property name="dragEnabled">
+               <bool>true</bool>
+              </property>
+              <property name="dragDropMode">
+               <enum>QAbstractItemView::InternalMove</enum>
+              </property>
+              <property name="defaultDropAction">
+               <enum>Qt::MoveAction</enum>
+              </property>
+              <property name="alternatingRowColors">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="PreviewWidget" name="preview">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>2</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::StyledPanel</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Raised</enum>
+       </property>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1188</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <widget class="QMenu" name="menuRecentFiles">
+     <property name="title">
+      <string>Recent files</string>
+     </property>
+    </widget>
+    <addaction name="actionPrintAndClose"/>
+    <addaction name="actionPrint"/>
+    <addaction name="actionPrintWithOptions"/>
+    <addaction name="separator"/>
+    <addaction name="actionOpen"/>
+    <addaction name="menuRecentFiles"/>
+    <addaction name="separator"/>
+    <addaction name="actionSave"/>
+    <addaction name="actionSaveAs"/>
+    <addaction name="actionExport"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuPreferences">
+    <property name="title">
+     <string>&amp;Preferences</string>
+    </property>
+    <addaction name="actionCheckUpdates"/>
+    <addaction name="actionPreferences"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
+   <widget class="QMenu" name="menuEditPage">
+    <property name="title">
+     <string>&amp;Edit page</string>
+    </property>
+    <addaction name="actionfake"/>
+   </widget>
+   <widget class="QMenu" name="menuEditJob">
+    <property name="title">
+     <string>Edit &amp;job</string>
+    </property>
+    <addaction name="actionfake"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuEditPage"/>
+   <addaction name="menuEditJob"/>
+   <addaction name="menuPreferences"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>Toolbar</string>
+   </property>
+   <property name="movable">
+    <bool>false</bool>
+   </property>
+   <property name="toolButtonStyle">
+    <enum>Qt::ToolButtonTextUnderIcon</enum>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionPrintAndClose"/>
+   <addaction name="actionPrint"/>
+   <addaction name="separator"/>
+   <addaction name="actionPreviousSheet"/>
+   <addaction name="actionNextSheet"/>
+  </widget>
+  <action name="actionPrint">
+   <property name="text">
+    <string>&amp;Print</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>E&amp;xit</string>
+   </property>
+  </action>
+  <action name="actionPrintAndClose">
+   <property name="text">
+    <string>Print and Close</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
+  </action>
+  <action name="actionNextSheet">
+   <property name="text">
+    <string>Next sheet</string>
+   </property>
+  </action>
+  <action name="actionPreviousSheet">
+   <property name="text">
+    <string>Previous sheet</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About PlicaPage</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="text">
+    <string>Save</string>
+   </property>
+   <property name="toolTip">
+    <string>Save project</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionSaveAs">
+   <property name="text">
+    <string>Save as...</string>
+   </property>
+   <property name="toolTip">
+    <string>Save project under a new name</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
+   </property>
+  </action>
+  <action name="actionOpen">
+   <property name="text">
+    <string>Open...</string>
+   </property>
+   <property name="toolTip">
+    <string>Open an existing project</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionPreferences">
+   <property name="text">
+    <string extracomment="menu action text">&amp;Preferences...</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::PreferencesRole</enum>
+   </property>
+  </action>
+  <action name="actionExport">
+   <property name="text">
+    <string>&amp;Export to PDF...</string>
+   </property>
+   <property name="toolTip">
+    <string>Export the project to PDF</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+E</string>
+   </property>
+  </action>
+  <action name="actionPrintWithOptions">
+   <property name="text">
+    <string>Print with options...</string>
+   </property>
+   <property name="toolTip">
+    <string>Select number of copies before printing.</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+P</string>
+   </property>
+  </action>
+  <action name="actionfake">
+   <property name="text">
+    <string notr="true">fake</string>
+   </property>
+  </action>
+  <action name="actionCheckUpdates">
+   <property name="text">
+    <string extracomment="Menu action text">Check for Updates...</string>
+   </property>
+   <property name="toolTip">
+    <string extracomment="menu action tooltip">Check for Updates</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::ApplicationSpecificRole</enum>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>LayoutRadioButton</class>
+   <extends>QRadioButton</extends>
+   <header>gui/widgets/layoutradiobutton.h</header>
+  </customwidget>
+  <customwidget>
+   <class>PrintersComboBox</class>
+   <extends>QComboBox</extends>
+   <header>gui/widgets/printerscombobox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>PreviewWidget</class>
+   <extends>QFrame</extends>
+   <header>gui/widgets/previewwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>JobListView</class>
+   <extends>QListWidget</extends>
+   <header>gui/widgets/joblistview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>SubBookletView</class>
+   <extends>QListWidget</extends>
+   <header>gui/widgets/subbookletview.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

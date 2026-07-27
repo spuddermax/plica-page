@@ -32,10 +32,10 @@ fi
 
 
 
-SCHEME="boomaga"
+SCHEME="plicapage"
 URI="${SCHEME}:/"
-NAME="Boomaga"
-PPD="lsb/usr/boomaga/${SCHEME}.ppd"
+NAME="PlicaPage"
+PPD="lsb/usr/plicapage/${SCHEME}.ppd"
 
 
 while [ $# -gt 0 ]; do

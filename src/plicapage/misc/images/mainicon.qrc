@@ -1,0 +1,24 @@
+<RCC>
+    <qresource prefix="16">
+        <file alias="mainicon">mainicon/plicapage-16x16.png</file>
+    </qresource>
+    <qresource prefix="32">
+        <file alias="mainicon">mainicon/plicapage-32x32.png</file>
+    </qresource>
+    <qresource prefix="48">
+        <file alias="mainicon">mainicon/plicapage-48x48.png</file>
+    </qresource>
+    <qresource prefix="64">
+        <file alias="mainicon">mainicon/plicapage-64x64.png</file>
+    </qresource>
+    <qresource prefix="128">
+        <file alias="mainicon">mainicon/plicapage-128x128.png</file>
+    </qresource>
+    <qresource prefix="256">
+        <file alias="mainicon">mainicon/plicapage-256x256.png</file>
+    </qresource>
+    <qresource prefix="512">
+        <file alias="mainicon">mainicon/plicapage-512x512.png</file>
+    </qresource>
+</RCC>
+

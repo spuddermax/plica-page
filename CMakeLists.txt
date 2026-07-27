@@ -27,9 +27,15 @@
 cmake_minimum_required(VERSION 3.0.0)
 cmake_policy(SET CMP0028 NEW)
 
-project(boomaga)
+project(plicapage)
 
-set(MAJOR_VERSION 3)
+# Single source of truth for every name-derived path and identifier. Everything
+# that has to be distinct from a parallel Boomaga install derives from these two,
+# so a future rename is one edit rather than a hunt through the tree.
+set(APP_NAME         "plicapage")   # binary, CUPS backend, URI scheme, paths
+set(APP_DISPLAY_NAME "PlicaPage")   # what a human sees
+
+set(MAJOR_VERSION 1)
 set(MINOR_VERSION 0)
 set(PATCH_VERSION 0)
 #set(BETA_VERSION beta5)
@@ -43,6 +49,8 @@ add_definitions(-DMAJOR_VERSION=${MAJOR_VERSION})
 add_definitions(-DMINOR_VERSION=${MINOR_VERSION})
 add_definitions(-DPATCH_VERSION=${PATCH_VERSION})
 add_definitions(-DFULL_VERSION=\"${FULL_VERSION}\")
+add_definitions(-DAPP_NAME=\"${APP_NAME}\")
+add_definitions(-DAPP_DISPLAY_NAME=\"${APP_DISPLAY_NAME}\")
 
 set (CMAKE_CXX_STANDARD 11)
 
@@ -50,7 +58,7 @@ include("cmake/tools.cmake")
 include("cmake/status_message.cmake")
 include("cmake/cxx_standard.cmake")
 
-status_message("boomaga ver. ${FULL_VERSION}")
+status_message("${APP_DISPLAY_NAME} ver. ${FULL_VERSION}")
 status_message(" ")
 
 
@@ -67,11 +75,11 @@ endif(CUPS_CONFIG_EXECUTABLE)
 # Linux ***************************************
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
-  set(DEF_CUPS_PPD_DIR /usr/share/ppd/boomaga)
+  set(DEF_CUPS_PPD_DIR /usr/share/ppd/${APP_NAME})
   set(DEF_DBUS_SERVICE_DIR ${CMAKE_INSTALL_PREFIX}/share/dbus-1/services)
   set(USE_DBUS TRUE)
   set(GUI_DIR ${CMAKE_INSTALL_PREFIX}/bin)
-  set(NONGUI_DIR ${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/boomaga)
+  set(NONGUI_DIR ${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/${APP_NAME})
 
 # FreeBSD *************************************
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD")
@@ -80,17 +88,17 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD")
   set(DEF_DBUS_SERVICE_DIR ${CMAKE_INSTALL_PREFIX}/share/dbus-1/services)
   set(USE_DBUS TRUE)
   set(GUI_DIR ${CMAKE_INSTALL_PREFIX}/bin)
-  set(NONGUI_DIR ${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/boomaga)
+  set(NONGUI_DIR ${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX}/${APP_NAME})
 
 # MacOS ***************************************
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
 
-  set(MAC_APP_ID    "io.github.Boomaga")
+  set(MAC_APP_ID    "io.github.PlicaPage")
   set(MAC_SPOOL_DIR "/var/spool/${MAC_APP_ID}")
 
   set(DEF_CUPS_PPD_DIR ${CMAKE_INSTALL_PREFIX}/Library/Printers/PPDs/Contents/Resources)
-  set(GUI_DIR    ${CMAKE_INSTALL_PREFIX}/Applications/Boomaga.app/Contents/MacOS)
-  set(NONGUI_DIR ${CMAKE_INSTALL_PREFIX}/Applications/Boomaga.app/Contents/MacOS)
+  set(GUI_DIR    ${CMAKE_INSTALL_PREFIX}/Applications/${APP_DISPLAY_NAME}.app/Contents/MacOS)
+  set(NONGUI_DIR ${CMAKE_INSTALL_PREFIX}/Applications/${APP_DISPLAY_NAME}.app/Contents/MacOS)
   set(USE_DBUS FALSE)
 
 endif()
@@ -108,16 +116,27 @@ endif()
 
 ###########################################################
 
-setFirstUpper(CUPS_BACKEND_NAME "boomaga")
+set(CUPS_BACKEND_NAME "${APP_DISPLAY_NAME}")
 
-setByDefault(CUPS_BACKEND_URI   "boomaga:/")
+setByDefault(CUPS_BACKEND_URI   "${APP_NAME}:/")
 setByDefault(CUPS_BACKEND_INFO  "${CUPS_BACKEND_NAME}")
 setByDefault(CUPS_BACKEND_MODEL "${CUPS_BACKEND_NAME} printer")
-setByDefault(CUPS_BACKEND_DESCRIPTION  "Virtual boomaga printer")
+setByDefault(CUPS_BACKEND_DESCRIPTION  "Virtual ${APP_DISPLAY_NAME} printer")
 setByDefault(CUPS_BACKEND_MANUFACTURER "Generic")
 
-setByDefault(GUI_PROGRAM    ${GUI_DIR}/boomaga)
-setByDefault(GUI_SHARE_DIR  ${CMAKE_INSTALL_PREFIX}/share/boomaga)
+setByDefault(GUI_PROGRAM    ${GUI_DIR}/${APP_NAME})
+setByDefault(GUI_SHARE_DIR  ${CMAKE_INSTALL_PREFIX}/share/${APP_NAME})
+
+# The CUPS backend runs as root outside the user's session and hands the job to
+# the GUI, so it needs to know both the spool directory and the binary to exec.
+# These were hardcoded upstream; a parallel install must not share either.
+setByDefault(SPOOL_DIR_NAME     "${APP_NAME}")
+setByDefault(GUI_BINARY_NAME    "${APP_NAME}")
+
+# D-Bus identity. Sharing these with Boomaga would let whichever app started
+# first claim the other's print jobs - and then delete the spool file.
+setByDefault(DBUS_SERVICE_NAME  "org.${APP_NAME}")
+setByDefault(DBUS_OBJECT_PATH   "/${APP_NAME}")
 
 setByDefault(CUPS_BACKEND_DIR   "${DEF_CUPS_BACKEND_DIR}")
 setByDefault(CUPS_PPD_DIR       "${DEF_CUPS_PPD_DIR}")
@@ -141,7 +160,7 @@ status_message("  CUPS_BACKEND_MANUFACTURER = ${CUPS_BACKEND_MANUFACTURER}")
 status_message(" ")
 
 add_subdirectory(src/backend)
-add_subdirectory(src/boomaga)
+add_subdirectory(src/plicapage)
 add_subdirectory(selinux)
 
 show_status()

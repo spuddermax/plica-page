@@ -12,12 +12,12 @@ fi
 FILE=$(readlink -e "${FILE}")
 
 
-boomagabackend=""
+plicapagebackend=""
 
 dir=$(pwd)
 while [[ "$dir" != "/" ]]; do
 	if [ -d "${dir}/.git" ]; then 
-		boomagabackend=$(find "$dir" -name "boomagabackend")
+		plicapagebackend=$(find "$dir" -name "plicapagebackend")
 		break
 	fi
 
@@ -26,20 +26,20 @@ while [[ "$dir" != "/" ]]; do
 done
 
 
-if [ "$boomagabackend" == "" ]; then
-	boomagabackend=$(find "/usr/local/lib" "/usr/lib" -name "boomagabackend" 2>/dev/null)
+if [ "$plicapagebackend" == "" ]; then
+	plicapagebackend=$(find "/usr/local/lib" "/usr/lib" -name "plicapagebackend" 2>/dev/null)
 fi
 
-if [ "$boomagabackend" == "" ]; then
-	"echo boomagabackend not found"
+if [ "$plicapagebackend" == "" ]; then
+	"echo plicapagebackend not found"
 fi
 
 
 echo "################"
-echo "# program - $boomagabackend"
+echo "# program - $plicapagebackend"
 echo "# file    - $FILE"
 echo "#"
 
 
 #               <jobId> <title> <count> <options> <user>
-cat "${FILE}" | $boomagabackend 123 	"title"	1 		""		  $USER 	
+cat "${FILE}" | $plicapagebackend 123 	"title"	1 		""		  $USER 	

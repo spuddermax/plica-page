@@ -40,7 +40,7 @@ add_definitions(-DMAC_SPOOL_DIR=\"${MAC_SPOOL_DIR}\")
 
 add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES})
 target_link_libraries(${PROJECT_NAME})
-set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "boomaga")
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "plicapage")
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -55,18 +55,18 @@ if(APPLE)
 endif()
 
 
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/boomaga"
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/plicapage"
   DESTINATION ${CUPS_BACKEND_DIR}
   PERMISSIONS
     OWNER_READ OWNER_WRITE OWNER_EXECUTE
 )
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/boomaga.ppd
-               ${CMAKE_CURRENT_BINARY_DIR}/boomaga.ppd
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/plicapage.ppd
+               ${CMAKE_CURRENT_BINARY_DIR}/plicapage.ppd
                @ONLY)
 
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/boomaga.ppd
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/plicapage.ppd
   DESTINATION ${CUPS_PPD_DIR}
   PERMISSIONS
     OWNER_READ OWNER_WRITE

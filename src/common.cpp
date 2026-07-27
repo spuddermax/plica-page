@@ -32,7 +32,7 @@
 
 using namespace std;
 
-static string mLogPrefix = "Boomaga";
+static string mLogPrefix = "PlicaPage";
 static bool mWriteTime = false;
 
 /************************************************
