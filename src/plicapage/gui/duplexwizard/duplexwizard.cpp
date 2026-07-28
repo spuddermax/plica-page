@@ -176,10 +176,25 @@ QString manualDuplexInstruction(ManualDuplexHandling handling)
                            "Manual duplex handling, flip about the short edge");
 
     case HandlingNoFlip:
-        return QObject::tr("Put the stack straight back without turning it over.",
+        return QObject::tr("Do not turn the stack over - keep it exactly as it came out.",
                            "Manual duplex handling, no flip");
     }
     return QString();
+}
+
+
+/************************************************
+ * The half of the instruction people skip: the paper has to physically go back
+ * into the printer. Kept in one place so the wizard and the print prompt cannot
+ * drift, and deliberately vague about which tray - a manual feed slot, a
+ * multipurpose tray and a main cassette are all "the one it prints from".
+ ************************************************/
+QString manualDuplexReinsertHint()
+{
+    return QObject::tr("Then load the stack back into the printer's paper feed tray - "
+                       "whichever tray it just printed from - keeping the sheets in the "
+                       "same order.",
+                       "Manual duplex, reminder to put the paper back in the tray");
 }
 
 
@@ -198,17 +213,24 @@ bool showManualDuplexPrompt(const Printer *printer, QWidget *parent)
     {
         // The remembered movement, shown rather than left to memory.
         text->setText(QObject::tr("<p>One side of every sheet has been printed on <b>%1</b>.</p>"
-                                  "<p><b>%2</b> Keep them in the same order, then press Continue.</p>",
-                                  "Manual duplex prompt. %1 is the printer, %2 the remembered movement")
-                      .arg(printer->name(), manualDuplexInstruction(printer->manualDuplexHandling())));
+                                  "<p><b>%2</b></p>"
+                                  "<p>%3</p>"
+                                  "<p>Then press Continue to print the other side.</p>",
+                                  "Manual duplex prompt. %1 printer, %2 the remembered "
+                                  "movement, %3 the reminder to reload the tray")
+                      .arg(printer->name(),
+                           manualDuplexInstruction(printer->manualDuplexHandling()),
+                           manualDuplexReinsertHint()));
     }
     else
     {
         // Never calibrated, so we genuinely do not know which way is right and
         // must not pretend otherwise.
         text->setText(QObject::tr("<p>One side of every sheet has been printed on <b>%1</b>.</p>"
-                                  "<p>Turn the pages over, put them back in the printer and press "
-                                  "Continue.</p>"
+                                  "<p>Turn the pages over, then load them back into the printer's "
+                                  "paper feed tray - whichever tray it just printed from - keeping "
+                                  "them in the same order.</p>"
+                                  "<p>Then press Continue to print the other side.</p>"
                                   "<p><i>Printer settings can work out which way round they go, so "
                                   "you do not have to remember.</i></p>",
                                   "Manual duplex prompt for a printer that has not been calibrated")
@@ -331,10 +353,11 @@ void DuplexWizard::buildFlipPage()
 
     QLabel *text = new QLabel(
         tr("<p>Two sheets are printing now, marked <b>1</b> and <b>2</b>.</p>"
-           "<p>Take the whole stack out <b>without changing its order</b>, put it "
-           "back in the paper tray ready to print the other side, and tell us how "
-           "you did it. PlicaPage will remember, and show you the same picture "
-           "every time you print double-sided.</p>",
+           "<p>When they are done, take the whole stack out, turn it over in "
+           "whichever way seems natural for this printer, and <b>load it back "
+           "into the paper feed tray</b> - keeping the sheets in the same order.</p>"
+           "<p>Then tell us which way you turned it. PlicaPage will remember, and "
+           "show you the same picture every time you print double-sided.</p>",
            "Duplex calibration wizard, choosing how the paper is put back"), page);
     text->setWordWrap(true);
     l->addWidget(text);
@@ -638,9 +661,11 @@ void DuplexWizard::printVerification()
     QMessageBox dialog(this);
     dialog.setWindowTitle(windowTitle());
     dialog.setIconPixmap(QPixmap(":/48/print"));
-    dialog.setText(tr("%1 Keep them in the same order, then press Continue.",
-                      "Duplex calibration verification step. %1 is the chosen movement")
-                   .arg(manualDuplexInstruction(chosenHandling())));
+    dialog.setText(tr("%1\n\n%2\n\nThen press Continue.",
+                      "Duplex calibration verification step. %1 is the chosen "
+                      "movement, %2 the reminder to reload the tray")
+                   .arg(manualDuplexInstruction(chosenHandling()),
+                        manualDuplexReinsertHint()));
     dialog.addButton(QMessageBox::Abort);
     QPushButton *btn = dialog.addButton(QMessageBox::Ok);
     btn->setText(tr("Continue", "Duplex calibration button"));

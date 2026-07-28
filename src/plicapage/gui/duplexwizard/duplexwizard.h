@@ -69,6 +69,10 @@ private:
 /// prompt so the two can never describe the movement differently.
 QString manualDuplexInstruction(ManualDuplexHandling handling);
 
+/// The "and put it back in the tray" half of the instruction, shared so every
+/// place that asks for the movement also asks for the paper to be reloaded.
+QString manualDuplexReinsertHint();
+
 /**
  * The "now turn the stack over" prompt shown midway through a real job.
  *
