@@ -23,6 +23,49 @@ preserved; only the tags were dropped, and they remain in the `upstream` remote
 
 ---
 
+## 2026-07 — The intermittent double-free crash
+
+Boomaga aborts with `double free or corruption (fasttop)`, or segfaults, on
+roughly one launch in five with a large scanned document, taking the loaded jobs
+with it. Stock 3.0.0 does it too, so this is inherited rather than introduced
+here.
+
+The fault is in poppler, not in either program: its global colour-management
+profiles are built lazily, without a guard, by whichever render arrives first.
+Two renders reaching that setup together corrupt the heap, and the abort surfaces
+later in `cmsCloseProfile` under `GfxState`'s constructor — often with every
+thread apparently just rendering, because a double free is reported when
+something is freed rather than when the heap was damaged.
+
+- New `PopplerGate` (`src/plicapage/popplergate.{h,cpp}`), a process-wide gate
+  that every poppler call goes through. Rendering takes it *shared*, so the
+  preview stays parallel; the first render in the process takes it exclusively,
+  which is what forces poppler's one-time setup to complete on its own. Opening
+  and closing documents take it exclusively too — never shown to be the culprit,
+  but never shown to be safe either, and rare enough that excluding them costs
+  nothing.
+- It has to be process-wide: PlicaPage runs two `Render` pools and `PageTrimmer`
+  opens documents on the main thread, and poppler's globals belong to none of
+  them.
+- `Render::setFileName()` stopped destroying its workers one at a time. It quit,
+  waited for and deleted each worker in turn, which freed the first worker's
+  document while the rest of the pool was still inside poppler; and it started
+  each new thread while later workers were still opening their documents. Both
+  are now two passes — stop all, then delete all; build all, then start all.
+- `RenderWorker::mBusy` was written by the worker thread and read by the main
+  one. Besides being a data race, it meant a burst of dispatches all landed on
+  the first worker, because none had flipped its flag yet: eight threads
+  rendered a preview one page at a time. It is now written only by `Render` on
+  the main thread, when a job is handed out and when the result comes back.
+- Workers whose document failed to open are no longer handed jobs. They never
+  answer, so they would have been marked busy permanently.
+
+Tested by `test_render.cpp`, whose stress tests abort on the unfixed code:
+`test_RenderNoReloadStress` — one load and nothing but concurrent rendering —
+failed 4 runs in 20 before the fix, which is what identified the real cause after
+document lifetime turned out to be a red herring. Reproducers and the full
+account are in `poppler-crash-repro/`.
+
 ## 2026-07 — Trim whitespace and scale to fit
 
 Boomaga always scaled the *whole* source page into its cell on the sheet,

@@ -36,6 +36,7 @@ project(plicapageGui)
 set(HEADERS
     plicapagetypes.h
     dbus.h
+    popplergate.h
     render.h
     settings.h
     finddbusaddress.h
@@ -91,6 +92,7 @@ set(SOURCES
     main.cpp
     plicapagetypes.cpp
     dbus.cpp
+    popplergate.cpp
     render.cpp
     settings.cpp
     finddbusaddress.cpp

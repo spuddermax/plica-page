@@ -74,6 +74,11 @@ private slots:
     void test_TrimScale();
     void test_TrimClip();
 
+    void test_RenderReloadRace();
+    void test_RenderCrossInstanceRace();
+    void test_RenderNoReloadStress();
+    void test_PopplerGateSharedConcurrency();
+
     void testPdfArray();
 
     void testPdfBool();

@@ -31,6 +31,8 @@
 #include <poppler-page.h>
 #include <poppler-page-renderer.h>
 
+#include "../popplergate.h"
+
 
 /************************************************
  * Rasterization resolution. 72dpi makes one pixel exactly one PDF point,
@@ -214,8 +216,19 @@ QVector<QRectF> PageTrimmer::scan(const QByteArray &pdfData, const QVector<QRect
 
     // load_from_raw_data does not copy, so pdfData has to outlive doc. It is a
     // const reference held for the whole call, so it does.
-    poppler::document *doc = poppler::document::load_from_raw_data(pdfData.constData(),
-                                                                  pdfData.size());
+    //
+    // This runs on the main thread while both preview pools may be rendering,
+    // so it is a third source of poppler calls and has to go through the same
+    // process-wide gate. Exclusive across the open itself only - holding it for
+    // the whole scan would stall the preview for every page of the document.
+    // See popplergate.h.
+    poppler::document *doc = 0;
+    {
+        PopplerGate::DocumentLock gate;
+        doc = poppler::document::load_from_raw_data(pdfData.constData(),
+                                                    pdfData.size());
+    }
+
     if (!doc)
         return res;
 
@@ -230,23 +243,42 @@ QVector<QRectF> PageTrimmer::scan(const QByteArray &pdfData, const QVector<QRect
 
     for (int i = 0; i < count; ++i)
     {
-        poppler::page *page = doc->create_page(i);
-        if (!page)
-            continue;
-
-        poppler::image img = renderer.render_page(page, mResolution, mResolution);
-        delete page;
-
-        if (img.is_valid() && img.format() == poppler::image::format_gray8)
         {
-            res[i] = inkBox(reinterpret_cast<const uchar*>(img.const_data()),
-                            img.width(), img.height(), img.bytes_per_row(),
-                            pageRects.at(i));
+            // Shared, and taken per page rather than around the whole loop, so
+            // a preview reload waiting to open its documents is held up by one
+            // page at most instead of by the entire scan.
+            //
+            // inkBox() stays inside it because it reads the buffer img owns.
+            // It touches no poppler state of its own, and a shared holder
+            // blocks nothing but a load.
+            PopplerGate::RenderLock gate;
+
+            poppler::page *page = doc->create_page(i);
+            if (!page)
+                continue;
+
+            poppler::image img = renderer.render_page(page, mResolution, mResolution);
+            delete page;
+
+            if (img.is_valid() && img.format() == poppler::image::format_gray8)
+            {
+                res[i] = inkBox(reinterpret_cast<const uchar*>(img.const_data()),
+                                img.width(), img.height(), img.bytes_per_row(),
+                                pageRects.at(i));
+            }
         }
 
+        // Outside the gate deliberately. Whatever is watching progress runs on
+        // this thread, and a slot that turned the event loop over could reach
+        // Render::setFileName() - which would then wait for a lock this thread
+        // is holding.
         emit progress(i + 1, count);
     }
 
-    delete doc;
+    {
+        PopplerGate::DocumentLock gate;
+        delete doc;
+    }
+
     return res;
 }

@@ -45,7 +45,19 @@ public:
     explicit RenderWorker(const QString &fileName, int resolution);
     virtual ~RenderWorker();
 
+    // mBusy is written by Render on the main thread only - when a job is
+    // handed out, and again when the result comes back. It used to be set by
+    // the worker thread instead, which meant the main thread could dispatch a
+    // whole burst of sheets before any worker had flipped its flag, and every
+    // one of them landed on the first worker. Eight threads then rendered a
+    // preview one page at a time.
     bool isBusy() const { return mBusy; }
+    void setBusy(bool busy) { mBusy = busy; }
+
+    // False when the document failed to open. Such a worker never answers, so
+    // handing it a job would mark it busy for good.
+    bool isValid() const { return mPopplerDoc != 0; }
+
     QThread *thread() { return &mThread; }
 
 public slots:
@@ -99,6 +111,7 @@ private:
 
     void startRenderSheet(RenderWorker *worker, int sheetNum);
     void startRenderPage(RenderWorker *worker, int pageNum);
+    void stopWorkers();
 
 };
 
