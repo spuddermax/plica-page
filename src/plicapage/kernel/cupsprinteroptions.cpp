@@ -37,27 +37,69 @@
 #endif
 
 
+/************************************************
+ * A PPD option that switches between grayscale and color, with the choice
+ * names it uses for each. Several color choices may be listed: the first one
+ * the PPD actually offers wins.
+ *
+ * ColorModel is the awkward one. Naming CMYK there hands the driver a raster
+ * that CUPS has already separated into ink, without a profile to do it well,
+ * which costs most of the color management and comes out dull. Drivers that
+ * offer RGB would rather separate it themselves, so ask for that first and
+ * keep CMYK for the ones that have nothing better.
+ ************************************************/
+struct ColorModeCase
+{
+    const char *option;
+    const char *grayScaleChoice;
+    const char *colorChoices[4];    // In preference order, terminated by a null.
+};
+
+static const ColorModeCase colorModeCases[] = {
+    { "ColorModel",     "Gray",         { "RGB", "CMYK", "KCMY", 0 } },
+    { "HPColorMode",    "grayscale",    { "colorsmart", 0, 0, 0 } },
+    { "BRMonoColor",    "Mono",         { "FullColor", 0, 0, 0 } },     // Brother
+    { "CNIJSGrayScale", "1",            { "0", 0, 0, 0 } },             //
+    { "HPColorAsGray",  "True",         { "False", 0, 0, 0 } },         // HP
+    { "XRColorMode",    "Black",        { "Color", 0, 0, 0 } },         // Xerox
+};
+
+
+/************************************************
+ * Both options are left empty if the PPD has no option we recognise, and the
+ * color one is left empty if the option we matched can only name grayscale.
+ * An empty option is simply not passed to lpr, which leaves the PPD's own
+ * default in place - a better guess than any choice we could invent.
+ ************************************************/
 void findGrayScaleOption(ppd_file_t *ppd, QString *grayScaleOption, QString *colorOption)
 {
-    QStringList cases;
-    cases << "ColorModel"       << "Gray"       << "CMYK";
-    cases << "HPColorMode"      << "grayscale"  << "colorsmart";
-    cases << "BRMonoColor"      << "Mono"       << "FullColor";     // Brother
-    cases << "CNIJSGrayScale"   << "1"          << "0";             //
-    cases << "HPColorAsGray"    << "True"       << "False";         // HP
-    cases << "XRColorMode"      << "Black"      << "Color";         // Xerox
+    // A case that names both modes beats one that only names grayscale, so
+    // remember the first grayscale-only match and keep looking.
+    QString grayScaleOnly;
 
-
-    for (int i=0; i<cases.count(); i+=3)
+    for (uint i=0; i<sizeof(colorModeCases)/sizeof(colorModeCases[0]); ++i)
     {
-        ppd_option_t *option  = ppdFindOption(ppd, cases[i].toLatin1().data());
-        if (option && ppdFindChoice(option, cases[i+1].toLatin1().data()))
+        const ColorModeCase &c = colorModeCases[i];
+
+        ppd_option_t *option = ppdFindOption(ppd, c.option);
+        if (!option || !ppdFindChoice(option, c.grayScaleChoice))
+            continue;
+
+        for (int j=0; j<4 && c.colorChoices[j]; ++j)
         {
-            *grayScaleOption = QString("%1=%2").arg(cases[i], cases[i+1]);
-            *colorOption     = QString("%1=%2").arg(cases[i], cases[i+2]);
+            if (!ppdFindChoice(option, c.colorChoices[j]))
+                continue;
+
+            *grayScaleOption = QString("%1=%2").arg(c.option, c.grayScaleChoice);
+            *colorOption     = QString("%1=%2").arg(c.option, c.colorChoices[j]);
             return;
         }
+
+        if (grayScaleOnly.isEmpty())
+            grayScaleOnly = QString("%1=%2").arg(c.option, c.grayScaleChoice);
     }
+
+    *grayScaleOption = grayScaleOnly;
 }
 
 
