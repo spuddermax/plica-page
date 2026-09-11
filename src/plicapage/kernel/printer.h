@@ -63,6 +63,17 @@ public:
     qreal internalMargin(Unit unit=UnitPoint) const;
     void setInternalMargin(qreal value, Unit unit);
 
+    /**
+     * Shift applied to every sheet as the last step before it is spooled,
+     * measured in the printed page's own frame: positive X moves the print
+     * towards the right edge of the sheet, positive Y towards the top. It
+     * compensates for a printer that places its image off the sheet's centre.
+     */
+    qreal printOffsetX(Unit unit=UnitPoint) const;
+    void setPrintOffsetX(qreal value, Unit unit);
+    qreal printOffsetY(Unit unit=UnitPoint) const;
+    void setPrintOffsetY(qreal value, Unit unit);
+
     DuplexType duplexType() const { return mDuplexType; }
     void setDuplexType(DuplexType duplexType);
 
@@ -138,6 +149,8 @@ public:
 private:
     QString mName;
     QMap<QString, QString> mPrinterOptions;
+    qreal mPrintOffsetX;
+    qreal mPrintOffsetY;
     qreal mLeftMargin;
     qreal mRightMargin;
     qreal mTopMargin;
@@ -177,6 +190,8 @@ public:
 
     QSizeF paperSize(Unit unit) const { return mCurrentProfile->paperSize(unit); }
     void setPaperSize(const QSizeF & paperSize, Unit unit) { mCurrentProfile->setPaperSize(paperSize, unit); }
+    qreal printOffsetX(Unit unit=UnitPoint) const { return mCurrentProfile->printOffsetX(unit); }
+    qreal printOffsetY(Unit unit=UnitPoint) const { return mCurrentProfile->printOffsetY(unit); }
 
     QRectF paperRect(Unit unit=UnitPoint) const;
     QRectF pageRect(Unit unit=UnitPoint) const;

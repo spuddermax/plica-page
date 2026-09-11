@@ -82,6 +82,8 @@ public:
         PrinterProfile_DuplexCalibrated,
         PrinterProfile_DuplexCalibrationDeclined,
         PrinterProfile_OptionsGroup,
+        PrinterProfile_PrintOffsetX,
+        PrinterProfile_PrintOffsetY,
 
         // PrinterSettingsDialog ****************
         PrinterSettingsDialog_Geometry,

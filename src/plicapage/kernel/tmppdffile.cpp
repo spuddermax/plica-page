@@ -556,6 +556,22 @@ void TmpPdfFile::getPageStream(QString *out, const Sheet *sheet) const
 {
     Printer * printer = project->printer();
 
+    // The print offset is measured on the sheet as it comes out of the printer,
+    // but this stream is drawn before /Rotate turns the page, so express the
+    // shift in the unrotated frame first. A 180-degree sheet (the first pass
+    // of a hand-turned duplex job) wants the opposite shift, or the two sides
+    // would move apart instead of together.
+    {
+        const double dx = printer->printOffsetX();
+        const double dy = printer->printOffsetY();
+        const double r  = sheet->rotation() * M_PI / 180.0;
+        const double cx = dx * cos(r) - dy * sin(r);
+        const double cy = dx * sin(r) + dy * cos(r);
+        *out += QString("q\n1 0 0 1 %1 %2 cm\n")
+                .arg(cx, 0, 'f', 3)
+                .arg(cy, 0, 'f', 3);
+    }
+
     for(int i=0; i<sheet->count(); ++i)
     {
         const ProjectPage *page = sheet->page(i);
@@ -647,4 +663,6 @@ void TmpPdfFile::getPageStream(QString *out, const Sheet *sheet) const
             *out += "Q\n";
         }
     }
+
+    *out += "Q\n";   // the print offset
 }

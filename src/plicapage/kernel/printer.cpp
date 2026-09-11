@@ -54,6 +54,8 @@ PrinterProfile::PrinterProfile():
     mTopMargin(0),
     mBottomMargin(0),
     mInternalMargin(14),
+    mPrintOffsetX(0),
+    mPrintOffsetY(0),
     mDuplexType(DuplexManual),
     mDrawBorder(false),
     mReverseOrder(false),
@@ -129,6 +131,12 @@ void PrinterProfile::setLeftMargin(qreal value, Unit unit)
 {
     mLeftMargin = fromUnit(value, unit);
 }
+
+
+qreal PrinterProfile::printOffsetX(Unit unit) const { return toUnit(mPrintOffsetX, unit); }
+void  PrinterProfile::setPrintOffsetX(qreal value, Unit unit) { mPrintOffsetX = fromUnit(value, unit); }
+qreal PrinterProfile::printOffsetY(Unit unit) const { return toUnit(mPrintOffsetY, unit); }
+void  PrinterProfile::setPrintOffsetY(qreal value, Unit unit) { mPrintOffsetY = fromUnit(value, unit); }
 
 
 /************************************************
@@ -337,6 +345,8 @@ void PrinterProfile::readSettings()
     mTopMargin      = settings->value(Settings::PrinterProfile_TopMargin,       mTopMargin).toDouble();
     mBottomMargin   = settings->value(Settings::PrinterProfile_BottomMargin,    mBottomMargin).toDouble();
     mInternalMargin = settings->value(Settings::PrinterProfile_InternalMargin,  mInternalMargin).toDouble();
+    mPrintOffsetX   = settings->value(Settings::PrinterProfile_PrintOffsetX,    mPrintOffsetX).toDouble();
+    mPrintOffsetY   = settings->value(Settings::PrinterProfile_PrintOffsetY,    mPrintOffsetY).toDouble();
 
     QString s = settings->value(Settings::PrinterProfile_DuplexType, duplexTypeToStr(mDuplexType)).toString();
     mDuplexType = strToDuplexType(s);
@@ -418,6 +428,8 @@ void PrinterProfile::saveSettings() const
     settings->setValue(Settings::PrinterProfile_TopMargin,      mTopMargin);
     settings->setValue(Settings::PrinterProfile_BottomMargin,   mBottomMargin);
     settings->setValue(Settings::PrinterProfile_InternalMargin, mInternalMargin);
+    settings->setValue(Settings::PrinterProfile_PrintOffsetX,   mPrintOffsetX);
+    settings->setValue(Settings::PrinterProfile_PrintOffsetY,   mPrintOffsetY);
 
     settings->setValue(Settings::PrinterProfile_DuplexType,     duplexTypeToStr(mDuplexType));
     settings->setValue(Settings::PrinterProfile_DrawBorder,     mDrawBorder);

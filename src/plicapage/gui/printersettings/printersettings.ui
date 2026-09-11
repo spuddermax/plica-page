@@ -273,6 +273,52 @@
           </layout>
          </item>
          <item>
+          <widget class="QGroupBox" name="offsetGroup">
+           <property name="title">
+            <string>Print offset</string>
+           </property>
+           <layout class="QGridLayout" name="offsetGrid">
+            <item row="0" column="0">
+             <widget class="QLabel" name="offsetXLbl">
+              <property name="text">
+               <string>Horizontal:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QDoubleSpinBox" name="offsetXSpin"/>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="offsetYLbl">
+              <property name="text">
+               <string>Vertical:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QDoubleSpinBox" name="offsetYSpin"/>
+            </item>
+            <item row="0" column="2" rowspan="2">
+             <widget class="QLabel" name="offsetHelp">
+              <property name="text">
+               <string>Shifts every printed sheet. Positive values move the print right and up. Print the test page, measure the four 10 mm marks, and enter (right - left) / 2 and (top - bottom) / 2.</string>
+              </property>
+              <property name="wordWrap">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0" colspan="3">
+             <widget class="QPushButton" name="centeringButton">
+              <property name="text">
+               <string>Print centring test page</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
           <widget class="QCheckBox" name="borderCbx">
            <property name="text">
             <string>Draw border</string>

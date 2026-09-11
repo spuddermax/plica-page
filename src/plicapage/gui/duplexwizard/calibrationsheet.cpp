@@ -34,6 +34,8 @@
 #include <QPainter>
 #include <QPdfWriter>
 #include <QRectF>
+#include <QPolygonF>
+#include <QStringList>
 
 
 /************************************************
@@ -147,6 +149,90 @@ QString writeCalibrationPdf(const Printer *printer, int pass)
 
         drawSheet(&painter, pageRect, glyphs.mid(i, 1), sideLabel, caption);
     }
+
+    painter.end();
+    return fileName;
+}
+
+
+/************************************************
+ * The rulers are labelled with the distance the PDF puts each mark from the
+ * sheet edge. Measuring where the marks really land tells the user how far the
+ * printer is off, and in which direction.
+ ************************************************/
+QString writeCenteringPdf(const Printer *printer, qreal offsetX, qreal offsetY)
+{
+    if (!printer)
+        return QString();
+
+    const QString fileName = genTmpFileName("-centering.pdf");
+    const QSizeF paper = printer->paperSize(UnitPoint);
+    if (paper.isEmpty())
+        return QString();
+
+    QPdfWriter pdf(fileName);
+    pdf.setCreator("PlicaPage");
+    pdf.setTitle(QObject::tr("Centring test page", "Title of the printed centring test document"));
+    pdf.setResolution(72);
+    pdf.setPageSize(QPageSize(paper, QPageSize::Point, QString(), QPageSize::ExactMatch));
+    pdf.setPageMargins(QMarginsF(0, 0, 0, 0), QPageLayout::Point);
+
+    QPainter painter;
+    if (!painter.begin(&pdf))
+        return QString();
+
+    // QPainter's y runs down the page; the offset's runs up.
+    painter.translate(offsetX, -offsetY);
+
+    const qreal mm = 72.0 / 25.4;
+    const qreal w = paper.width(), h = paper.height();
+    const QPointF c(w / 2, h / 2);
+
+    painter.setPen(QPen(Qt::black, 0.5));
+    painter.drawLine(QPointF(c.x() - 40, c.y()), QPointF(c.x() + 40, c.y()));
+    painter.drawLine(QPointF(c.x(), c.y() - 40), QPointF(c.x(), c.y() + 40));
+    painter.setPen(QPen(Qt::black, 0.4));
+    foreach (qreal r, QList<qreal>() << 5 * mm << 10 * mm)
+    {
+        QPolygonF d; d << QPointF(c.x() - r, c.y()) << QPointF(c.x(), c.y() - r)
+                       << QPointF(c.x() + r, c.y()) << QPointF(c.x(), c.y() + r);
+        painter.drawPolygon(d);
+    }
+
+    QFont small; small.setPointSizeF(6); painter.setFont(small);
+    // Ticks every millimetre from 2 to 30 mm in from each edge, labelled every 5.
+    for (int d = 2; d <= 30; ++d)
+    {
+        const qreal p = d * mm; const bool major = (d % 5 == 0); const qreal len = major ? 6 : 3;
+        const QString lbl = QString::number(d);
+        painter.drawLine(QPointF(p, c.y() - len), QPointF(p, c.y() + len));                  // left
+        painter.drawLine(QPointF(w - p, c.y() - len), QPointF(w - p, c.y() + len));          // right
+        painter.drawLine(QPointF(c.x() - len, p), QPointF(c.x() + len, p));                  // top
+        painter.drawLine(QPointF(c.x() - len, h - p), QPointF(c.x() + len, h - p));          // bottom
+        if (major)
+        {
+            painter.drawText(QPointF(p - 3, c.y() - 9), lbl);
+            painter.drawText(QPointF(w - p - 3, c.y() - 9), lbl);
+            painter.drawText(QPointF(c.x() + 9, p + 2), lbl);
+            painter.drawText(QPointF(c.x() + 9, h - p + 2), lbl);
+        }
+    }
+    painter.setPen(QPen(Qt::black, 0.3));
+    painter.drawLine(QPointF(2 * mm, c.y()), QPointF(30 * mm, c.y()));
+    painter.drawLine(QPointF(w - 30 * mm, c.y()), QPointF(w - 2 * mm, c.y()));
+    painter.drawLine(QPointF(c.x(), 2 * mm), QPointF(c.x(), 30 * mm));
+    painter.drawLine(QPointF(c.x(), h - 30 * mm), QPointF(c.x(), h - 2 * mm));
+
+    QFont text; text.setPointSizeF(9); painter.setFont(text);
+    const QStringList lines = QStringList()
+        << QObject::tr("PlicaPage centring test page", "Caption on the centring test sheet")
+        << QObject::tr("Each ruler is labelled with its distance in mm from the sheet edge as the PDF defines it.")
+        << QObject::tr("Measure the real distance from the paper edge to the 10 mm mark on all four sides.")
+        << QObject::tr("Horizontal offset = (right - left) / 2.   Vertical offset = (top - bottom) / 2.")
+        << QObject::tr("Enter them under Margins > Print offset, then print this page again: all four should read 10.")
+        << QObject::tr("Printed with offset X %1 pt, Y %2 pt.").arg(offsetX, 0, 'f', 1).arg(offsetY, 0, 'f', 1);
+    qreal y = 60;
+    foreach (const QString &l, lines) { painter.drawText(QPointF(40, y), l); y += 13; }
 
     painter.end();
     return fileName;

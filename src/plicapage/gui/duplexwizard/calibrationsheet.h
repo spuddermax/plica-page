@@ -53,4 +53,11 @@ class Printer;
  ************************************************/
 QString writeCalibrationPdf(const Printer *printer, int pass);
 
+/**
+ * One page with a crosshair at the exact centre and a ruler in from each edge,
+ * drawn with the given print offset (points, page frame) already applied so the
+ * user can print, measure, enter an offset, and print again to confirm.
+ */
+QString writeCenteringPdf(const Printer *printer, qreal offsetX, qreal offsetY);
+
 #endif // CALIBRATIONSHEET_H

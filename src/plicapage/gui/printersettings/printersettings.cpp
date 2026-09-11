@@ -25,6 +25,7 @@
 
 #include "printersettings.h"
 #include "kernel/ppdoptions.h"
+#include "gui/duplexwizard/calibrationsheet.h"
 #include <QComboBox>
 #include <QLabel>
 #include <QFormLayout>
@@ -206,6 +207,15 @@ PrinterSettings::PrinterSettings(QWidget *parent) :
     connect(ui->calibrateButton, SIGNAL(clicked()),
             this, SLOT(runDuplexWizard()));
 
+    connect(ui->offsetXSpin, SIGNAL(editingFinished()),
+            this, SLOT(updateProfile()));
+
+    connect(ui->offsetYSpin, SIGNAL(editingFinished()),
+            this, SLOT(updateProfile()));
+
+    connect(ui->centeringButton, SIGNAL(clicked()),
+            this, SLOT(printCenteringPage()));
+
     restoreGeometry(settings->value(Settings::PrinterSettingsDialog_Geometry).toByteArray());
 }
 
@@ -300,6 +310,8 @@ void PrinterSettings::updateProfile()
     profile->setTopMargin(ui->topMarginSpin->value(), mUnit);
     profile->setBottomMargin(ui->bottomMarginSpin->value(), mUnit);
     profile->setInternalMargin(ui->internalMarginSpin->value(), mUnit);
+    profile->setPrintOffsetX(ui->offsetXSpin->value(), mUnit);
+    profile->setPrintOffsetY(ui->offsetYSpin->value(), mUnit);
 
     QVariant v =ui->duplexTypeComboBox->itemData(ui->duplexTypeComboBox->currentIndex());
     profile->setDuplexType(static_cast<DuplexType>(v.toInt()));
@@ -343,6 +355,8 @@ void PrinterSettings::updateWidgets()
     ui->topMarginSpin->setValue(profile->topMargin(mUnit));
     ui->bottomMarginSpin->setValue(profile->bottomMargin(mUnit));
     ui->internalMarginSpin->setValue(profile->internalMargin(mUnit));
+    ui->offsetXSpin->setValue(profile->printOffsetX(mUnit));
+    ui->offsetYSpin->setValue(profile->printOffsetY(mUnit));
 
     // The flip edge matters either way now: with a duplexer it is passed to
     // CUPS, and by hand it decides whether the first pass is turned round. Only
@@ -519,7 +533,26 @@ void PrinterSettings::resetToDefault()
     profile->setLeftMargin(    defaultCupsProfile->leftMargin(mUnit),     mUnit);
     profile->setRightMargin(   defaultCupsProfile->rightMargin(mUnit),    mUnit);
     profile->setInternalMargin(defaultCupsProfile->internalMargin(mUnit), mUnit);
+    profile->setPrintOffsetX(0, UnitPoint);
+    profile->setPrintOffsetY(0, UnitPoint);
     updateWidgets();
+}
+
+
+/************************************************
+ * Spools the centring page with the offset as currently entered, so the same
+ * sheet both measures the printer and confirms a correction.
+ ************************************************/
+void PrinterSettings::printCenteringPage()
+{
+    updateProfile();
+    PrinterProfile *profile = currentProfile();
+    if (!profile || !mPrinter)
+        return;
+
+    const QString file = writeCenteringPdf(mPrinter, profile->printOffsetX(), profile->printOffsetY());
+    if (!file.isEmpty())
+        mPrinter->printFile(file, tr("PlicaPage centring test", "Print job name"), false, 1, false);
 }
 
 
@@ -558,6 +591,17 @@ void PrinterSettings::applyUnits()
         spin->setDecimals(unitDecimals(mUnit));
         spin->setSingleStep(unitStep(mUnit));
         spin->setMaximum(unitMax(mUnit));
+        spin->setSuffix(suffix);
+    }
+
+    // An offset is a shift, so it is negative half the time whatever the
+    // margins policy says.
+    foreach (QDoubleSpinBox *spin, QList<QDoubleSpinBox*>() << ui->offsetXSpin << ui->offsetYSpin)
+    {
+        spin->setDecimals(unitDecimals(mUnit) + 1);
+        spin->setSingleStep(unitStep(mUnit) / 10);
+        spin->setMaximum(unitMax(mUnit));
+        spin->setMinimum(-unitMax(mUnit));
         spin->setSuffix(suffix);
     }
 

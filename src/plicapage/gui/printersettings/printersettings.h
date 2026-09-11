@@ -72,6 +72,7 @@ private slots:
     void delProfile();
     void profileRenamed(QWidget * editor);
     void resetToDefault();
+    void printCenteringPage();
 
 private:
     Ui::PrinterSettings *ui;
