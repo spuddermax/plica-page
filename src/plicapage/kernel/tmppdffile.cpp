@@ -556,20 +556,28 @@ void TmpPdfFile::getPageStream(QString *out, const Sheet *sheet) const
 {
     Printer * printer = project->printer();
 
-    // The print offset is measured on the sheet as it comes out of the printer,
-    // but this stream is drawn before /Rotate turns the page, so express the
-    // shift in the unrotated frame first. A 180-degree sheet (the first pass
-    // of a hand-turned duplex job) wants the opposite shift, or the two sides
-    // would move apart instead of together.
+    // The print offset is measured on the physical sheet, held portrait as it
+    // leaves the printer. This stream is drawn in the unrotated page frame, and
+    // two rotations sit between the two: the page's own /Rotate, and CUPS
+    // turning a landscape page back onto portrait paper. Sent through the real
+    // filter chain, they combine like this:
+    //
+    //     /Rotate 0   -> content axes match the sheet
+    //     /Rotate 90  -> match too: CUPS's turn undoes the page's exactly
+    //     /Rotate 180 -> content is upside down on the sheet
+    //     /Rotate 270 -> upside down too
+    //
+    // So the shift is never turned by a quarter, only kept or negated. Turning
+    // it with /Rotate, as this once did, put a landscape job's vertical
+    // correction on the horizontal axis.
     {
         const double dx = printer->printOffsetX();
         const double dy = printer->printOffsetY();
-        const double r  = sheet->rotation() * M_PI / 180.0;
-        const double cx = dx * cos(r) - dy * sin(r);
-        const double cy = dx * sin(r) + dy * cos(r);
+        const int rot = ((int)sheet->rotation() % 360 + 360) % 360;
+        const double sign = (rot == 180 || rot == 270) ? -1.0 : 1.0;
         *out += QString("q\n1 0 0 1 %1 %2 cm\n")
-                .arg(cx, 0, 'f', 3)
-                .arg(cy, 0, 'f', 3);
+                .arg(sign * dx, 0, 'f', 3)
+                .arg(sign * dy, 0, 'f', 3);
     }
 
     for(int i=0; i<sheet->count(); ++i)

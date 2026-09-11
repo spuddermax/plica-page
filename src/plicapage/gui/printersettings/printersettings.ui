@@ -301,7 +301,7 @@
             <item row="0" column="2" rowspan="2">
              <widget class="QLabel" name="offsetHelp">
               <property name="text">
-               <string>Shifts every printed sheet. Positive values move the print right and up. Print the test page, measure the four 10 mm marks, and enter (right - left) / 2 and (top - bottom) / 2.</string>
+               <string>Shifts every printed sheet, measured on the paper as it leaves the printer held portrait: positive values move the print towards the right edge and the top edge of that sheet, whatever the layout's orientation. Print the test page, measure the four 10 mm marks, and enter (right - left) / 2 and (top - bottom) / 2.</string>
               </property>
               <property name="wordWrap">
                <bool>true</bool>
