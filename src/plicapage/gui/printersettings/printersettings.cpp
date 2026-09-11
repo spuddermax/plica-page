@@ -585,6 +585,11 @@ void PrinterSettings::printCenteringPage()
     if (!profile || !mPrinter)
         return;
 
+    // Same as the wizard: the page is sized from, and spooled with, the
+    // printer's active profile, so the on-screen paper size, offset and
+    // printer options must be applied before it is drawn.
+    applyUpdates();
+
     const QString file = writeCenteringPdf(mPrinter, profile->printOffsetX(), profile->printOffsetY());
     if (!file.isEmpty())
         mPrinter->printFile(file, tr("PlicaPage centring test", "Print job name"), false, 1, false);
@@ -599,9 +604,13 @@ void PrinterSettings::runDuplexWizard()
     if (!mPrinter)
         return;
 
-    // Commit what is on screen first, so the wizard prints with the margins and
-    // paper the user is currently looking at rather than the last saved ones.
+    // The wizard's sheets are drawn and spooled through the printer's active
+    // profile, so what is on screen has to be pushed to the printer first, as
+    // Apply would do - updating the dialog's own copy is not enough. Otherwise
+    // the calibration prints on the last saved paper and options, not the ones
+    // the user is looking at.
     updateProfile();
+    applyUpdates();
 
     // Into the selected profile's own copy: this dialog pushes those copies
     // back to the printer on OK, so anything written elsewhere is discarded.
