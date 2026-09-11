@@ -32,6 +32,7 @@
 #include <QVector>
 #include <QString>
 #include <QMap>
+#include "ppdoptions.h"
 #include <QPrinterInfo>
 #include <QExplicitlySharedDataPointer>
 #include <QIODevice>
@@ -92,6 +93,14 @@ public:
     void setPaperSize(const QSizeF & paperSize, Unit unit);
 
     /**
+     * The PPD PageSize this profile prints on, or empty to follow the queue's
+     * default. The dimensions in paperSize() are kept in step by the Printer,
+     * which is the one that can read the PPD.
+     */
+    QString paperSizeName() const { return mPaperSizeName; }
+    void setPaperSizeName(const QString &name) { mPaperSizeName = name; }
+
+    /**
      * Which edge the paper is turned about between the two sides.
      *
      * For a printer with a duplexer this is passed to CUPS. For manual duplex it
@@ -149,6 +158,7 @@ public:
 private:
     QString mName;
     QMap<QString, QString> mPrinterOptions;
+    QString mPaperSizeName;
     qreal mPrintOffsetX;
     qreal mPrintOffsetY;
     qreal mLeftMargin;
@@ -187,6 +197,16 @@ public:
     void setCurrentProfile(int index);
 
     const PrinterProfile *defaultCupsProfile() const { return &mDefaultCupsProfile; }
+
+    /// Paper sizes the PPD offers, and the queue's default among them.
+    const QList<PpdPaperSize> &paperSizes() const { return mPaperSizes; }
+    QString defaultPaperSizeName() const { return mDefaultPaperSizeName; }
+
+    /**
+     * Give the profile the dimensions of the paper size it names, or the
+     * queue's default if it names none or one the PPD no longer has.
+     */
+    void resolvePaperSize(PrinterProfile &profile) const;
 
     QSizeF paperSize(Unit unit) const { return mCurrentProfile->paperSize(unit); }
     void setPaperSize(const QSizeF & paperSize, Unit unit) { mCurrentProfile->setPaperSize(paperSize, unit); }
@@ -271,6 +291,8 @@ private:
     const QString mPrinterName;
     QString mDeviceUri;
     QVector<PrinterProfile> mProfiles;
+    QList<PpdPaperSize> mPaperSizes;
+    QString mDefaultPaperSizeName;
     int mCurrentProfileIndex;
     PrinterProfile *mCurrentProfile;
     PrinterProfile mDefaultCupsProfile;

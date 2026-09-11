@@ -83,6 +83,7 @@ private:
     void applyUnits();
     void buildPrinterOptions();
     QMap<QString, QComboBox*> mOptionCombos;   // PPD option keyword -> its combo
+    QComboBox *mPaperSizeCombo;
     ProfileItem *currentItem() const;
     PrinterProfile *currentProfile() const;
 };

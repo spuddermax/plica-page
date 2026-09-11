@@ -82,6 +82,7 @@ public:
         PrinterProfile_DuplexCalibrated,
         PrinterProfile_DuplexCalibrationDeclined,
         PrinterProfile_OptionsGroup,
+        PrinterProfile_PaperSize,
         PrinterProfile_PrintOffsetX,
         PrinterProfile_PrintOffsetY,
 

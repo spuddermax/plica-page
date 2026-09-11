@@ -103,7 +103,8 @@ PrinterSettings::PrinterSettings(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::PrinterSettings),
     mPrinter(nullptr),
-    mUnit(currentUnit())
+    mUnit(currentUnit()),
+    mPaperSizeCombo(nullptr)
 {
     setAttribute(Qt::WA_DeleteOnClose);
 
@@ -332,6 +333,12 @@ void PrinterSettings::updateProfile()
 
     for (auto it = mOptionCombos.constBegin(); it != mOptionCombos.constEnd(); ++it)
         profile->setPrinterOption(it.key(), it.value()->currentData().toString());
+
+    if (mPaperSizeCombo)
+    {
+        profile->setPaperSizeName(mPaperSizeCombo->currentData().toString());
+        mPrinter->resolvePaperSize(*profile);   // dimensions follow the name
+    }
 }
 
 
@@ -388,6 +395,11 @@ void PrinterSettings::updateWidgets()
         const int idx = it.value()->findData(profile->printerOption(it.key()));
         it.value()->setCurrentIndex(idx < 0 ? 0 : idx);   // unknown or unset -> printer default
     }
+    if (mPaperSizeCombo)
+    {
+        const int idx = mPaperSizeCombo->findData(profile->paperSizeName());
+        mPaperSizeCombo->setCurrentIndex(idx < 0 ? 0 : idx);
+    }
 
     updatePreview();
 }
@@ -409,9 +421,32 @@ void PrinterSettings::buildPrinterOptions()
         delete item;
     }
     mOptionCombos.clear();
+    mPaperSizeCombo = nullptr;
 
     if (!mPrinter)
         return;
+
+    // Paper size first: it changes the sheet itself, so everything else in the
+    // program follows it, unlike the driver options below.
+    if (!mPrinter->paperSizes().isEmpty())
+    {
+        QComboBox *combo = new QComboBox();
+        combo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+        combo->setMinimumContentsLength(18);
+        combo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        QString defaultText = mPrinter->defaultPaperSizeName();
+        foreach (const PpdPaperSize &p, mPrinter->paperSizes())
+            if (p.keyword == mPrinter->defaultPaperSizeName())
+                defaultText = p.text;
+        combo->addItem(tr("Printer default (%1)").arg(defaultText), QString());
+        foreach (const PpdPaperSize &p, mPrinter->paperSizes())
+            combo->addItem(p.text, p.keyword);
+        combo->setToolTip(tr("The paper PlicaPage lays sheets out on and asks the printer for."));
+        connect(combo, SIGNAL(activated(int)), this, SLOT(updateProfile()));
+        connect(combo, SIGNAL(activated(int)), this, SLOT(updateWidgets()));
+        form->addRow(tr("Paper size:"), combo);
+        mPaperSizeCombo = combo;
+    }
 
     PpdOptions ppd(mPrinter->name());
     if (!ppd.isValid() || ppd.options().isEmpty())

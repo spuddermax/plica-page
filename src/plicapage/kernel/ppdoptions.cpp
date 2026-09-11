@@ -125,6 +125,31 @@ PpdOptions::PpdOptions(const QString &printerName):
         }
     }
 
+    // Paper sizes: dimensions come from the size table, the display text from
+    // the PageSize option's choices.
+    if (ppd_option_t *pageSize = ppdFindOption(ppd, "PageSize"))
+    {
+        mDefaultPaperSize = pageSize->defchoice;
+        for (int i = 0; i < ppd->num_sizes; ++i)
+        {
+            const ppd_size_t &sz = ppd->sizes[i];
+            if (QString(sz.name).startsWith("Custom"))
+                continue;
+            PpdPaperSize p;
+            p.keyword = sz.name;
+            p.text    = sz.name;
+            if (ppd_choice_t *ch = ppdFindChoice(pageSize, sz.name))
+                if (ch->text[0])
+                    p.text = QString::fromUtf8(ch->text);
+            p.size   = QSizeF(sz.width, sz.length);
+            p.left   = sz.left;
+            p.right  = sz.width - sz.right;
+            p.top    = sz.length - sz.top;
+            p.bottom = sz.bottom;
+            mPaperSizes << p;
+        }
+    }
+
     ppdClose(ppd);
     QFile::remove(ppdFile);
     mValid = true;

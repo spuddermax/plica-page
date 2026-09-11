@@ -26,12 +26,21 @@
 #define PPDOPTIONS_H
 
 #include <QList>
+#include <QSizeF>
 #include <QString>
 
 struct PpdChoice
 {
     QString keyword;    // What lpr is given: -o <option>=<keyword>
     QString text;       // What the PPD calls it in the UI
+};
+
+struct PpdPaperSize
+{
+    QString keyword;    // PPD PageSize choice, e.g. "Letter"
+    QString text;
+    QSizeF  size;       // points
+    qreal left, right, top, bottom;   // the PPD's imageable-area margins, points
 };
 
 struct PpdOption
@@ -63,7 +72,14 @@ public:
     /// string if there is nothing that looks like one.
     QString qualityKeyword() const { return mQualityKeyword; }
 
+    /// Every paper size the PPD defines, in PPD order, and the one the queue
+    /// uses when a job names none.
+    const QList<PpdPaperSize> &paperSizes() const { return mPaperSizes; }
+    QString defaultPaperSize() const { return mDefaultPaperSize; }
+
 private:
+    QList<PpdPaperSize> mPaperSizes;
+    QString mDefaultPaperSize;
     bool mValid;
     QList<PpdOption> mOptions;
     QString mQualityKeyword;

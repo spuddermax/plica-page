@@ -160,6 +160,7 @@ QString Settings::keyToString(Settings::Key key) const
     case PrinterProfile_DuplexCalibrated:          return "DuplexCalibrated";
     case PrinterProfile_DuplexCalibrationDeclined: return "DuplexCalibrationDeclined";
     case PrinterProfile_OptionsGroup:              return "PrinterOptions";
+    case PrinterProfile_PaperSize:                 return "PaperSize";
     case PrinterProfile_PrintOffsetX:              return "PrintOffsetX";
     case PrinterProfile_PrintOffsetY:              return "PrintOffsetY";
 

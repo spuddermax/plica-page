@@ -101,6 +101,10 @@ PrinterProfile &PrinterProfile::operator=(const PrinterProfile &other)
     mManualDuplexHandling      = other.mManualDuplexHandling;
     mDuplexCalibrated          = other.mDuplexCalibrated;
     mDuplexCalibrationDeclined = other.mDuplexCalibrationDeclined;
+    mPrinterOptions            = other.mPrinterOptions;
+    mPaperSizeName             = other.mPaperSizeName;
+    mPrintOffsetX              = other.mPrintOffsetX;
+    mPrintOffsetY              = other.mPrintOffsetY;
 
     return *this;
 }
@@ -345,6 +349,7 @@ void PrinterProfile::readSettings()
     mTopMargin      = settings->value(Settings::PrinterProfile_TopMargin,       mTopMargin).toDouble();
     mBottomMargin   = settings->value(Settings::PrinterProfile_BottomMargin,    mBottomMargin).toDouble();
     mInternalMargin = settings->value(Settings::PrinterProfile_InternalMargin,  mInternalMargin).toDouble();
+    mPaperSizeName  = settings->value(Settings::PrinterProfile_PaperSize,       mPaperSizeName).toString();
     mPrintOffsetX   = settings->value(Settings::PrinterProfile_PrintOffsetX,    mPrintOffsetX).toDouble();
     mPrintOffsetY   = settings->value(Settings::PrinterProfile_PrintOffsetY,    mPrintOffsetY).toDouble();
 
@@ -428,6 +433,7 @@ void PrinterProfile::saveSettings() const
     settings->setValue(Settings::PrinterProfile_TopMargin,      mTopMargin);
     settings->setValue(Settings::PrinterProfile_BottomMargin,   mBottomMargin);
     settings->setValue(Settings::PrinterProfile_InternalMargin, mInternalMargin);
+    settings->setValue(Settings::PrinterProfile_PaperSize,      mPaperSizeName);
     settings->setValue(Settings::PrinterProfile_PrintOffsetX,   mPrintOffsetX);
     settings->setValue(Settings::PrinterProfile_PrintOffsetY,   mPrintOffsetY);
 
@@ -478,7 +484,35 @@ Printer::Printer(const QString &printerName):
     mGrayscaleOption = cupsOpts.grayScaleOption();
     mColorOption     = cupsOpts.colorOption();
 
+    {
+        PpdOptions ppd(mPrinterName);
+        mPaperSizes = ppd.paperSizes();
+        mDefaultPaperSizeName = ppd.defaultPaperSize();
+    }
+
     readSettings();
+    for (int i = 0; i < mProfiles.count(); ++i)
+        resolvePaperSize(mProfiles[i]);
+}
+
+
+/************************************************
+
+ ************************************************/
+void Printer::resolvePaperSize(PrinterProfile &profile) const
+{
+    const QString name = profile.paperSizeName();
+    if (!name.isEmpty())
+        foreach (const PpdPaperSize &p, mPaperSizes)
+            if (p.keyword == name)
+            {
+                profile.setPaperSize(p.size, UnitPoint);
+                return;
+            }
+
+    // Nothing chosen, or a size this PPD no longer lists: the queue default.
+    profile.setPaperSizeName(QString());
+    profile.setPaperSize(mDefaultCupsProfile.paperSize(UnitPoint), UnitPoint);
 }
 
 
@@ -497,6 +531,8 @@ Printer::~Printer()
 void Printer::setProfiles(const QVector<PrinterProfile> &value)
 {
     mProfiles = value;
+    for (int i = 0; i < mProfiles.count(); ++i)
+        resolvePaperSize(mProfiles[i]);
 }
 
 
@@ -731,6 +767,11 @@ bool Printer::printFile(const QString &fileName, const QString &jobName, bool do
     // Grayscale/color printing .................
 
     // Whatever the profile chose on the printer tab ........
+    if (!mCurrentProfile->paperSizeName().isEmpty())
+    {
+        args << "-o PageSize=" + mCurrentProfile->paperSizeName();
+        args << "-o media="    + mCurrentProfile->paperSizeName();
+    }
     const QMap<QString, QString> options = mCurrentProfile->printerOptions();
     for (auto it = options.constBegin(); it != options.constEnd(); ++it)
         args << "-o " + it.key() + "=" + it.value();
