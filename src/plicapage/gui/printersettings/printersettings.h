@@ -37,6 +37,8 @@ class PrinterSettings;
 }
 
 class QAbstractButton;
+class QComboBox;
+#include <QMap>
 class ProfileItem;
 
 
@@ -78,6 +80,8 @@ private:
 
     void applyUpdates();
     void applyUnits();
+    void buildPrinterOptions();
+    QMap<QString, QComboBox*> mOptionCombos;   // PPD option keyword -> its combo
     ProfileItem *currentItem() const;
     PrinterProfile *currentProfile() const;
 };

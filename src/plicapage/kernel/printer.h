@@ -31,6 +31,7 @@
 #include <QObject>
 #include <QVector>
 #include <QString>
+#include <QMap>
 #include <QPrinterInfo>
 #include <QExplicitlySharedDataPointer>
 #include <QIODevice>
@@ -123,11 +124,20 @@ public:
     bool duplexCalibrationDeclined() const { return mDuplexCalibrationDeclined; }
     void setDuplexCalibrationDeclined(bool value);
 
+    /**
+     * Per-job PPD options this profile sets, as option keyword -> choice
+     * keyword. Anything absent is left to the queue's default.
+     */
+    QMap<QString, QString> printerOptions() const { return mPrinterOptions; }
+    QString printerOption(const QString &option) const { return mPrinterOptions.value(option); }
+    void setPrinterOption(const QString &option, const QString &choice);
+
     void readSettings();
     void saveSettings() const;
 
 private:
     QString mName;
+    QMap<QString, QString> mPrinterOptions;
     qreal mLeftMargin;
     qreal mRightMargin;
     qreal mTopMargin;

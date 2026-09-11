@@ -159,6 +159,7 @@ QString Settings::keyToString(Settings::Key key) const
     case PrinterProfile_ManualDuplexHandling:      return "ManualDuplexHandling";
     case PrinterProfile_DuplexCalibrated:          return "DuplexCalibrated";
     case PrinterProfile_DuplexCalibrationDeclined: return "DuplexCalibrationDeclined";
+    case PrinterProfile_OptionsGroup:              return "PrinterOptions";
 
     // PrinterSettingsDialog ****************
     case PrinterSettingsDialog_Geometry:return "PrinterSettingsDialog/Geometry";

@@ -24,6 +24,10 @@
  * END_COMMON_COPYRIGHT_HEADER */
 
 #include "printersettings.h"
+#include "kernel/ppdoptions.h"
+#include <QComboBox>
+#include <QLabel>
+#include <QFormLayout>
 #include "ui_printersettings.h"
 
 #include <QStandardItem>
@@ -222,6 +226,8 @@ PrinterSettings::~PrinterSettings()
 void PrinterSettings::setCurrentPrinter(Printer *printer)
 {
     mPrinter = printer;
+    buildPrinterOptions();
+
     setWindowTitle(tr("Preferences of \"%1\"").arg(mPrinter->name()));
     ui->duplexTypeComboBox->setEnabled(printer->canChangeDuplexType());
 
@@ -311,6 +317,9 @@ void PrinterSettings::updateProfile()
         profile->setFlipType(flip);
     else
         profile->setManualFlipType(flip);
+
+    for (auto it = mOptionCombos.constBegin(); it != mOptionCombos.constEnd(); ++it)
+        profile->setPrinterOption(it.key(), it.value()->currentData().toString());
 }
 
 
@@ -360,7 +369,83 @@ void PrinterSettings::updateWidgets()
     ui->flipLongEdgeCheck-> setChecked(shownFlip == FlipType::LongEdge);
     ui->flipShortEdgeCheck->setChecked(shownFlip == FlipType::ShortEdge);
 
+    for (auto it = mOptionCombos.constBegin(); it != mOptionCombos.constEnd(); ++it)
+    {
+        const int idx = it.value()->findData(profile->printerOption(it.key()));
+        it.value()->setCurrentIndex(idx < 0 ? 0 : idx);   // unknown or unset -> printer default
+    }
+
     updatePreview();
+}
+
+
+/************************************************
+ * Fill the Printer tab from the PPD: print quality first, then every other
+ * option under its own group heading. Each combo starts with "Printer default"
+ * so a profile that never touched an option keeps following the queue.
+ ************************************************/
+void PrinterSettings::buildPrinterOptions()
+{
+    QFormLayout *form = ui->printerOptionsForm;
+    ui->printerOptionsScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    while (form->count() > 0)
+    {
+        QLayoutItem *item = form->takeAt(0);
+        delete item->widget();
+        delete item;
+    }
+    mOptionCombos.clear();
+
+    if (!mPrinter)
+        return;
+
+    PpdOptions ppd(mPrinter->name());
+    if (!ppd.isValid() || ppd.options().isEmpty())
+    {
+        form->addRow(new QLabel(tr("This printer's driver offers no options that can be set per job.")));
+        return;
+    }
+
+    auto addOption = [this, form](const PpdOption &option, const QString &label)
+    {
+        QComboBox *combo = new QComboBox();
+        // Long PPD choice names must not widen the form past the tab; let the
+        // combo take the row's width and elide inside it instead.
+        combo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+        combo->setMinimumContentsLength(18);
+        combo->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        combo->addItem(tr("Printer default (%1)").arg(option.defaultText()), QString());
+        foreach (const PpdChoice &choice, option.choices)
+            combo->addItem(choice.text, choice.keyword);
+        combo->setToolTip(tr("PPD option %1").arg(option.keyword));
+        connect(combo, SIGNAL(activated(int)), this, SLOT(updateProfile()));
+        form->addRow(label + ":", combo);
+        mOptionCombos.insert(option.keyword, combo);
+    };
+
+    const QString quality = ppd.qualityKeyword();
+    foreach (const PpdOption &option, ppd.options())
+        if (option.keyword == quality)
+        {
+            addOption(option, tr("Print quality"));
+            break;
+        }
+
+    QString lastGroup;
+    foreach (const PpdOption &option, ppd.options())
+    {
+        if (option.keyword == quality)
+            continue;
+        if (option.group != lastGroup)
+        {
+            QLabel *heading = new QLabel(option.group);
+            QFont f = heading->font(); f.setBold(true); heading->setFont(f);
+            heading->setContentsMargins(0, 12, 0, 2);
+            form->addRow(heading);
+            lastGroup = option.group;
+        }
+        addOption(option, option.text);
+    }
 }
 
 

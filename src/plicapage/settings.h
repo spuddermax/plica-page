@@ -81,6 +81,7 @@ public:
         PrinterProfile_ManualDuplexHandling,
         PrinterProfile_DuplexCalibrated,
         PrinterProfile_DuplexCalibrationDeclined,
+        PrinterProfile_OptionsGroup,
 
         // PrinterSettingsDialog ****************
         PrinterSettingsDialog_Geometry,
@@ -108,6 +109,10 @@ public:
     QVariant value(const QString &key, const QVariant &defaultValue = QVariant()) const;
 
     void setValue(Key key, const QVariant &value);
+
+    /// The INI name a key is stored under. Public so callers can nest their own
+    /// groups beneath a key, as the printer profile does for PPD options.
+    QString keyToString(Key key) const;
     void setValue(const QString &key, const QVariant &value);
 
 private:
@@ -119,7 +124,6 @@ private:
     void setDefaultValue(const QString &key, const QVariant &defaultValue);
     void setDefaultValue(Key key, const QVariant &defaultValue);
 
-    QString keyToString(Key key) const;
     static QString mFileName;
 };
 

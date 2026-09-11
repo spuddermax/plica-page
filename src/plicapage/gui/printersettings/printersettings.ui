@@ -154,6 +154,30 @@
          </item>
         </layout>
        </widget>
+       <widget class="QWidget" name="printerTab">
+        <attribute name="title">
+         <string>Printer</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="printerTabLayout">
+         <item>
+          <widget class="QScrollArea" name="printerOptionsScroll">
+           <property name="frameShape">
+            <enum>QFrame::NoFrame</enum>
+           </property>
+           <property name="widgetResizable">
+            <bool>true</bool>
+           </property>
+           <widget class="QWidget" name="printerOptionsWidget">
+            <layout class="QFormLayout" name="printerOptionsForm">
+             <property name="fieldGrowthPolicy">
+              <enum>QFormLayout::ExpandingFieldsGrow</enum>
+             </property>
+            </layout>
+           </widget>
+          </widget>
+         </item>
+        </layout>
+       </widget>
        <widget class="QWidget" name="MarginsTab">
         <attribute name="title">
          <string>Margins (mm)</string>

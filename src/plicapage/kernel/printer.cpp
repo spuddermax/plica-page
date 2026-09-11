@@ -316,6 +316,19 @@ void PrinterProfile::setFlipType(FlipType value)
 /************************************************
 
  ************************************************/
+/************************************************
+ * An empty choice means "use the queue's default", so drop the key rather than
+ * store a blank that would reach lpr as "-o Option=".
+ ************************************************/
+void PrinterProfile::setPrinterOption(const QString &option, const QString &choice)
+{
+    if (choice.isEmpty())
+        mPrinterOptions.remove(option);
+    else
+        mPrinterOptions.insert(option, choice);
+}
+
+
 void PrinterProfile::readSettings()
 {
     mName           = settings->value(Settings::PrinterProfile_Name,            mName).toString();
@@ -383,6 +396,14 @@ void PrinterProfile::readSettings()
                                         mDuplexCalibrated).toBool();
     mDuplexCalibrationDeclined = settings->value(Settings::PrinterProfile_DuplexCalibrationDeclined,
                                                  mDuplexCalibrationDeclined).toBool();
+
+    // The PPD options live in their own subgroup of the profile because their
+    // keys are the driver's own keywords, not ours.
+    mPrinterOptions.clear();
+    settings->beginGroup(settings->keyToString(Settings::PrinterProfile_OptionsGroup));
+    foreach (const QString &key, settings->childKeys())
+        mPrinterOptions.insert(key, settings->QSettings::value(key).toString());
+    settings->endGroup();
 }
 
 
@@ -409,6 +430,12 @@ void PrinterProfile::saveSettings() const
     settings->setValue(Settings::PrinterProfile_DuplexCalibrationDeclined, mDuplexCalibrationDeclined);
     settings->setValue(Settings::PrinterProfile_ColorMode,      colorModeToStr(mColorMode));
     settings->setValue(Settings::PrinterProfile_FlipType,       flipTypeToStr(mFlipType));
+
+    settings->remove(settings->keyToString(Settings::PrinterProfile_OptionsGroup));
+    settings->beginGroup(settings->keyToString(Settings::PrinterProfile_OptionsGroup));
+    for (auto it = mPrinterOptions.constBegin(); it != mPrinterOptions.constEnd(); ++it)
+        settings->QSettings::setValue(it.key(), it.value());
+    settings->endGroup();
 }
 
 
@@ -690,6 +717,11 @@ bool Printer::printFile(const QString &fileName, const QString &jobName, bool do
 
     }
     // Grayscale/color printing .................
+
+    // Whatever the profile chose on the printer tab ........
+    const QMap<QString, QString> options = mCurrentProfile->printerOptions();
+    for (auto it = options.constBegin(); it != options.constEnd(); ++it)
+        args << "-o " + it.key() + "=" + it.value();
 
     args << fileName.toLocal8Bit();
 

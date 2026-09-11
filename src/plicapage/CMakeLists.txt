@@ -50,6 +50,7 @@ set(HEADERS
     kernel/projectpage.h
     kernel/printer.h
     kernel/cupsprinteroptions.h
+    kernel/ppdoptions.h
     kernel/pdfprocessor.h
     kernel/pagetrimmer.h
     kernel/duplex.h
@@ -105,6 +106,7 @@ set(SOURCES
     kernel/project.cpp
     kernel/projectpage.cpp
     kernel/cupsprinteroptions.cpp
+    kernel/ppdoptions.cpp
     kernel/printer.cpp
     kernel/pdfprocessor.cpp
     kernel/pagetrimmer.cpp
