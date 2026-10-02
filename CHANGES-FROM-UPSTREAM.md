@@ -23,6 +23,29 @@ preserved; only the tags were dropped, and they remain in the `upstream` remote
 
 ---
 
+## 2026-10 — Source page margins from the print dialog
+
+The queue's PPD described a physical printer: every page size carried an
+unprintable border of 0.25 in at the sides and 0.5 in top and bottom, and custom
+page sizes were not accepted. Applications take that border as the smallest
+margin they may offer, so a document could not be laid out any closer to the
+edge before being sent to PlicaPage — and the real printer's margins were then
+added on top when the page was placed on the sheet.
+
+- Every `*ImageableArea` is now the full page. PlicaPage is not a device and has
+  no border of its own; the margins of the real printer still apply, in the
+  printer profile.
+- Custom page sizes are accepted (`*CustomPageSize`, `*ParamCustomPageSize`,
+  `*HWMargins: 0 0 0 0`), from 1 in to 200 in on either side. Dialogs that attach
+  margins to a custom size need this before they will offer one.
+- A named 5 x 8.25 in size (`w360h594`): half a Letter sheet less 1/8 in at the
+  top, bottom and outer edge and 3/8 in at the spine. A document laid out at
+  this size fills a booklet page at 100%. It is named because LibreOffice's
+  printer properties and the browser previews list only named sizes.
+
+A queue keeps the copy of the PPD it was created with, so an existing queue has
+to be refreshed after upgrading — see INSTALL.txt.
+
 ## 2026-07 — The intermittent double-free crash
 
 Boomaga aborts with `double free or corruption (fasttop)`, or segfaults, on

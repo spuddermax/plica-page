@@ -56,6 +56,12 @@ Registering the printer
 This creates a CUPS queue named PlicaPage on the plicapage:/ backend. It does
 not touch any existing queue, including a Boomaga one.
 
+CUPS gives a queue its own copy of the PPD when the queue is created, so
+installing a newer PlicaPage does not change a queue that already exists. To
+hand an existing queue the current PPD:
+
+    sudo lpadmin -p PlicaPage -m lsb/usr/plicapage/plicapage.ppd
+
 
 Installing next to Boomaga
 --------------------------
