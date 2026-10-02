@@ -55,6 +55,9 @@ public:
         TrimUniform,
         TrimPadding,
 
+        FoldLine,
+        StitchSpacing,
+
         // Preferences **************************
         Preferences_Geometry,
 

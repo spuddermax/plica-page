@@ -158,6 +158,17 @@ int     unitDecimals(Unit unit);
 double  unitStep(Unit unit);
 double  unitMax(Unit unit);
 
+// What is printed along the fold of a booklet sheet.
+enum FoldLine {
+    FoldLineNone     = 0,
+    FoldLineSolid    = 1,
+    FoldLineDotted   = 2,
+    FoldLineStitched = 3    // dotted, with cross marks where the stitches go
+};
+
+QString foldLineToStr(FoldLine value);
+FoldLine strToFoldLine(const QString &str);
+
 struct PdfPageInfo
 {
     PdfPageInfo(): rotate(0) {}

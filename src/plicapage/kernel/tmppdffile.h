@@ -79,6 +79,8 @@ signals:
 
 private:
     void getPageStream(QString *out, const Sheet *sheet) const;
+    static QString foldLineStream(FoldLine style, qreal stitchSpacing,
+                                  const QRectF &paperRect, const QRectF &pageRect);
     void writeSheets(QIODevice *out, const QList<Sheet *> &sheets) const;
     void writeCatalog(PDF::Writer *writer, const QVector<PdfPageInfo> &pages);
 

@@ -92,6 +92,8 @@ Project::Project(QObject *parent) :
     mTrimWhitespace(false),
     mTrimUniform(false),
     mTrimPadding(0),
+    mFoldLine(FoldLineNone),
+    mStitchSpacing(144),
     mInkBoxesReady(false),
     mRotation(NoRotate)
 {
@@ -894,6 +896,35 @@ void Project::setTrimPadding(qreal points)
 
     // Padding is applied on top of the ink boxes, so they stay valid.
     if (mTrimWhitespace)
+        update();
+}
+
+
+/************************************************
+ * The fold line is drawn into the sheet layer, so like the trim settings it
+ * needs a full update() rather than just changed().
+ ************************************************/
+void Project::setFoldLine(FoldLine value)
+{
+    if (mFoldLine == value)
+        return;
+
+    mFoldLine = value;
+    update();
+}
+
+
+/************************************************
+ *
+ ************************************************/
+void Project::setStitchSpacing(qreal points)
+{
+    if (qFuzzyCompare(mStitchSpacing, points))
+        return;
+
+    mStitchSpacing = points;
+
+    if (mFoldLine == FoldLineStitched)
         update();
 }
 

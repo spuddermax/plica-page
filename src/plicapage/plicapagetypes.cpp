@@ -176,6 +176,35 @@ Unit strToUnit(const QString &str)
 
 
 /************************************************
+
+ ************************************************/
+QString foldLineToStr(FoldLine value)
+{
+    switch (value)
+    {
+    case FoldLineNone:      return "None";
+    case FoldLineSolid:     return "Solid";
+    case FoldLineDotted:    return "Dotted";
+    case FoldLineStitched:  return "Stitched";
+    }
+    return "";
+}
+
+
+/************************************************
+
+ ************************************************/
+FoldLine strToFoldLine(const QString &str)
+{
+    QString s = str.toUpper();
+    if (s == "SOLID")       return FoldLineSolid;
+    if (s == "DOTTED")      return FoldLineDotted;
+    if (s == "STITCHED")    return FoldLineStitched;
+    return FoldLineNone;
+}
+
+
+/************************************************
  * Points -> display unit.
  ************************************************/
 qreal toUnit(qreal value, Unit unit)

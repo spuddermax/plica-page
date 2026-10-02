@@ -114,6 +114,58 @@
              </property>
             </widget>
            </item>
+           <item>
+            <widget class="QWidget" name="foldLineWidget" native="true">
+             <layout class="QFormLayout" name="foldLineLayout">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item row="0" column="0">
+               <widget class="QLabel" name="foldLineLbl">
+                <property name="text">
+                 <string comment="MainForm::Fold line label">Fold line:</string>
+                </property>
+                <property name="buddy">
+                 <cstring>foldLineCombo</cstring>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QComboBox" name="foldLineCombo">
+                <property name="toolTip">
+                 <string comment="MainForm::Fold line tooltip">Print a gray line down the middle of each booklet sheet, where it is folded.</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="stitchSpacingLbl">
+                <property name="text">
+                 <string comment="MainForm::Stitch spacing label">Stitch spacing:</string>
+                </property>
+                <property name="buddy">
+                 <cstring>stitchSpacingSpin</cstring>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QDoubleSpinBox" name="stitchSpacingSpin">
+                <property name="toolTip">
+                 <string comment="MainForm::Stitch spacing tooltip">Distance between the cross marks along the fold. One mark sits at the centre of the fold, and the others are spaced out from it as far as the pages reach.</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>

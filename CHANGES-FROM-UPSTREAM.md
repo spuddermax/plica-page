@@ -23,6 +23,25 @@ preserved; only the tags were dropped, and they remain in the `upstream` remote
 
 ---
 
+## 2026-10 — Fold line for booklets
+
+Boomaga marked the fold of a booklet only in the on-screen preview, as a guide
+overlay that never reached the paper.
+
+- New fold-line option, shown in the Layout panel while Booklet is selected:
+  none, solid gray, dotted gray, or dotted gray with cross marks for stitching
+  at a spacing the user sets (default 2 in). Stored as `Project/FoldLine` and
+  `Project/StitchSpacing`.
+- Drawn by `TmpPdfFile::foldLineStream()` into the sheet layer, inside the print
+  offset so it stays registered with the pages, which puts it in the print, the
+  PDF export and the preview alike; the preview's own guide steps aside while a
+  line is chosen. It goes through the middle of the gap between the two pages,
+  so it follows the Internal margin and any unequal outer margins, and runs the
+  full width of the paper. Stitch marks spread out from the centre of the fold
+  and stop where the pages end.
+- Drawn on both faces of every booklet sheet, and never on the preview sheet
+  that joins two sub-booklets, which has no fold.
+
 ## 2026-10 — Source page margins from the print dialog
 
 The queue's PPD described a physical printer: every page size carried an

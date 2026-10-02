@@ -74,6 +74,13 @@ private slots:
     void test_TrimScale();
     void test_TrimClip();
 
+    void test_FoldLineGeometry();
+    void test_FoldLineDotted();
+    void test_FoldLineStitches();
+    void test_FoldLineStitches_data();
+    void test_FoldLineSheets();
+    void test_FoldLineStrings();
+
     void test_RenderReloadRace();
     void test_RenderCrossInstanceRace();
     void test_RenderNoReloadStress();

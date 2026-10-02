@@ -27,6 +27,7 @@
 #include <QCryptographicHash>
 #include <QDir>
 #include <cmath>
+#include <QtMath>
 #include <QDateTime>
 
 #include "sheet.h"
@@ -672,5 +673,71 @@ void TmpPdfFile::getPageStream(QString *out, const Sheet *sheet) const
         }
     }
 
+    // Inside the print offset, so the fold stays registered with the pages.
+    // A sub-booklet preview sheet joins two booklets and has no fold.
+    if (sheet->hints().testFlag(Sheet::HintDrawFold) &&
+        !sheet->hints().testFlag(Sheet::HintSubBooklet))
+    {
+        *out += foldLineStream(project->foldLine(), project->stitchSpacing(),
+                               printer->paperRect(), printer->pageRect());
+    }
+
     *out += "Q\n";   // the print offset
+}
+
+
+/************************************************
+ * The fold of a booklet sheet, in the same unrotated portrait frame as
+ * getPageStream(). The booklet's two pages are stacked in that frame, each
+ * half of pageRect less half the internal margin, so the fold is a horizontal
+ * line through the centre of pageRect - the middle of the gap between them,
+ * whatever the margins. It runs the full width of the paper, to the edges
+ * where the sheet is lined up for folding.
+ *
+ * Stitch marks are kept within the pages' extent along the fold, and spaced
+ * out from its centre so the pattern is symmetric and always has a middle
+ * stitch.
+ ************************************************/
+QString TmpPdfFile::foldLineStream(FoldLine style, qreal stitchSpacing,
+                                   const QRectF &paperRect, const QRectF &pageRect)
+{
+    if (style == FoldLineNone)
+        return QString();
+
+    // PDF's origin is bottom left, the layout's top left.
+    const qreal y = paperRect.height() - pageRect.center().y();
+
+    QString res = "q\n0.6 G\n";
+
+    if (style == FoldLineSolid)
+        res += "0.5 w\n[] 0 d\n";
+    else
+        res += "0.75 w\n1 J\n[0 3] 0 d\n";  // round caps on empty dashes: dots
+
+    res += QString("%1 %2 m\n%3 %2 l\nS\n")
+            .arg(paperRect.left(),  0, 'f', 3)
+            .arg(y,                 0, 'f', 3)
+            .arg(paperRect.right(), 0, 'f', 3);
+
+    if (style == FoldLineStitched && stitchSpacing > 0)
+    {
+        const qreal arm = 3;                    // a 6 pt cross
+        const qreal center = pageRect.center().x();
+        const int count = qFloor(pageRect.width() / 2 / stitchSpacing + 1e-6);
+
+        res += "0.4 G\n0.75 w\n0 J\n[] 0 d\n";
+        for (int i = -count; i <= count; ++i)
+        {
+            const qreal x = center + i * stitchSpacing;
+            res += QString("%1 %2 m\n%3 %4 l\n%1 %4 m\n%3 %2 l\n")
+                    .arg(x - arm, 0, 'f', 3)
+                    .arg(y - arm, 0, 'f', 3)
+                    .arg(x + arm, 0, 'f', 3)
+                    .arg(y + arm, 0, 'f', 3);
+        }
+        res += "S\n";
+    }
+
+    res += "Q\n";
+    return res;
 }

@@ -472,7 +472,10 @@ void PreviewWidget::paintEvent(QPaintEvent *)
 
 
 
-    if (mHints.testFlag(Sheet::HintDrawFold) && !mHints.testFlag(Sheet::HintSubBooklet))
+    // With a fold line chosen it is drawn into the sheet itself, and shows in
+    // the rendered image exactly as it will print; this guide would hide it.
+    if (mHints.testFlag(Sheet::HintDrawFold) && !mHints.testFlag(Sheet::HintSubBooklet) &&
+        project->foldLine() == FoldLineNone)
     {
         QPen pen = painter.pen();
         pen.setStyle(Qt::SolidLine);

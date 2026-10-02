@@ -160,6 +160,19 @@ MainWindow::MainWindow(QWidget *parent):
     connect(ui->trimPaddingSpin, SIGNAL(editingFinished()),
             this, SLOT(trimPaddingChanged()));
 
+    ui->foldLineCombo->addItem(tr("None", "Fold line"),                         FoldLineNone);
+    ui->foldLineCombo->addItem(tr("Solid gray", "Fold line"),                   FoldLineSolid);
+    ui->foldLineCombo->addItem(tr("Dotted gray", "Fold line"),                  FoldLineDotted);
+    ui->foldLineCombo->addItem(tr("Dotted gray with stitch marks", "Fold line"), FoldLineStitched);
+
+    // Same reasoning as the trim widgets: activated() and editingFinished()
+    // fire only for the user, not for updateFoldLineWidgets().
+    connect(ui->foldLineCombo, SIGNAL(activated(int)),
+            this, SLOT(foldLineChanged()));
+
+    connect(ui->stitchSpacingSpin, SIGNAL(editingFinished()),
+            this, SLOT(stitchSpacingChanged()));
+
     connect(ui->jobsView, SIGNAL(pageSelected(int)),
             project, SLOT(setCurrentPage(int)));
 
@@ -324,6 +337,9 @@ void MainWindow::loadSettings()
     project->setTrimUniform(settings->value(Settings::TrimUniform).toBool());
     project->setTrimWhitespace(settings->value(Settings::TrimWhitespace).toBool());
 
+    project->setStitchSpacing(settings->value(Settings::StitchSpacing).toDouble());
+    project->setFoldLine(strToFoldLine(settings->value(Settings::FoldLine).toString()));
+
     ui->jobsView->setIconSize(settings->value(Settings::MainWindow_PageListIconSize).toInt());
     ui->subBookletView->setIconSize(settings->value(Settings::MainWindow_PageListIconSize).toInt());
 }
@@ -349,6 +365,9 @@ void MainWindow::saveSettings()
     settings->setValue(Settings::TrimWhitespace, project->trimWhitespace());
     settings->setValue(Settings::TrimUniform, project->trimUniform());
     settings->setValue(Settings::TrimPadding, project->trimPadding());
+
+    settings->setValue(Settings::FoldLine, foldLineToStr(project->foldLine()));
+    settings->setValue(Settings::StitchSpacing, project->stitchSpacing());
 
 
     if (project->printer() != Printer::nullPrinter())
@@ -493,6 +512,7 @@ void MainWindow::updateWidgets()
     }
 
     updateTrimWidgets();
+    updateFoldLineWidgets();
 
     // Update status bar ..........................
     if (project->pageCount())
@@ -632,6 +652,51 @@ void MainWindow::switchTrimMode()
 void MainWindow::trimPaddingChanged()
 {
     project->setTrimPadding(fromUnit(ui->trimPaddingSpin->value(), currentUnit()));
+}
+
+
+/************************************************
+
+ ************************************************/
+void MainWindow::foldLineChanged()
+{
+    project->setFoldLine((FoldLine)ui->foldLineCombo->currentData().toInt());
+}
+
+
+/************************************************
+
+ ************************************************/
+void MainWindow::stitchSpacingChanged()
+{
+    project->setStitchSpacing(fromUnit(ui->stitchSpacingSpin->value(), currentUnit()));
+}
+
+
+/************************************************
+ * The fold line belongs to the booklet layout alone, so it is shown only
+ * while that layout is chosen.
+ ************************************************/
+void MainWindow::updateFoldLineWidgets()
+{
+    const Unit unit = currentUnit();
+
+    ui->foldLineWidget->setVisible(project->layout()->id() == "Booklet");
+
+    ui->foldLineCombo->setCurrentIndex(ui->foldLineCombo->findData(project->foldLine()));
+
+    const bool stitched = project->foldLine() == FoldLineStitched;
+    ui->stitchSpacingLbl->setEnabled(stitched);
+    ui->stitchSpacingSpin->setEnabled(stitched);
+
+    ui->stitchSpacingSpin->blockSignals(true);
+    ui->stitchSpacingSpin->setDecimals(unitDecimals(unit));
+    ui->stitchSpacingSpin->setSingleStep(unitStep(unit));
+    ui->stitchSpacingSpin->setMinimum(toUnit(fromUnit(0.25, UnitInch), unit));
+    ui->stitchSpacingSpin->setMaximum(unitMax(unit));
+    ui->stitchSpacingSpin->setSuffix(" " + unitSuffix(unit));
+    ui->stitchSpacingSpin->setValue(toUnit(project->stitchSpacing(), unit));
+    ui->stitchSpacingSpin->blockSignals(false);
 }
 
 

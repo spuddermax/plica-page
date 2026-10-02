@@ -131,6 +131,9 @@ QString Settings::keyToString(Settings::Key key) const
     case TrimUniform:                   return "Project/TrimUniform";
     case TrimPadding:                   return "Project/TrimPadding";
 
+    case FoldLine:                      return "Project/FoldLine";
+    case StitchSpacing:                 return "Project/StitchSpacing";
+
     // Preferences **************************
     case Preferences_Geometry:          return "Preferences/Geometry";
 
@@ -216,6 +219,9 @@ void Settings::init()
     setDefaultValue(TrimUniform, false);
     // Lengths are always stored in points, never in the display unit.
     setDefaultValue(TrimPadding, fromUnit(2.0, UnitMillimeter));
+
+    setDefaultValue(FoldLine, foldLineToStr(FoldLineNone));
+    setDefaultValue(StitchSpacing, fromUnit(2.0, UnitInch));
 
     QString dir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     dir = shrinkHomeDir(dir);

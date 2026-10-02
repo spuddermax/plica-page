@@ -59,6 +59,8 @@ private slots:
     void offerDuplexCalibration();
     void switchTrimMode();
     void trimPaddingChanged();
+    void foldLineChanged();
+    void stitchSpacingChanged();
 
     bool print(uint count = 1, bool collate = true);
     void printAndClose(uint count = 1, bool collate = true);
@@ -125,6 +127,7 @@ private:
     void initActions();
     void initStatusBar();
     void updateTrimWidgets();
+    void updateFoldLineWidgets();
 
     void loadSettings();
     void saveSettings();

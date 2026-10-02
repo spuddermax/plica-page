@@ -140,6 +140,11 @@ public:
     /// Padding left around the trimmed content, in points.
     qreal trimPadding() const { return mTrimPadding; }
 
+    /// What is printed along the fold of booklet sheets.
+    FoldLine foldLine() const { return mFoldLine; }
+    /// Distance between stitch marks on a FoldLineStitched fold, in points.
+    qreal stitchSpacing() const { return mStitchSpacing; }
+
     /**
      * The union of every page's ink box, used when all pages are to share one
      * crop so that type stays the same size throughout the document.
@@ -207,6 +212,8 @@ public slots:
     void setTrimWhitespace(bool value);
     void setTrimUniform(bool value);
     void setTrimPadding(qreal points);
+    void setFoldLine(FoldLine value);
+    void setStitchSpacing(qreal points);
     void update();
 
 
@@ -249,6 +256,8 @@ private:
     bool mTrimWhitespace;
     bool mTrimUniform;
     qreal mTrimPadding;
+    FoldLine mFoldLine;
+    qreal mStitchSpacing;
     bool mInkBoxesReady;
     QRectF mUniformInkBox;
 
