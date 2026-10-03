@@ -58,6 +58,11 @@ Three options:
 | **Manual with reverse** | The default, and right for most printers — any printer that stacks its output **face down**, so the pile comes out in reverse order. |
 | **Manual without reverse** | Printers that stack **face up**, leaving the pile in the order it was printed. |
 
+PlicaPage asks CUPS whether the printer can turn the paper over itself, and a
+printer it has not seen before starts on the matching setting. If a profile is
+set to manual on a printer that has a duplexer, the first double-sided print
+offers to switch.
+
 In either manual mode, printing runs as two passes:
 
 1. One side of every sheet is printed.

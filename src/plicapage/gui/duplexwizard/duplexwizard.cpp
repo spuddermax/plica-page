@@ -325,11 +325,21 @@ void DuplexWizard::buildIntroPage()
     QWidget *page = new QWidget(this);
     QVBoxLayout *l = new QVBoxLayout(page);
 
-    QLabel *text = new QLabel(
-        tr("<p>Your printer cannot turn the paper over by itself, so PlicaPage "
-           "prints one side of every sheet, waits while you turn the stack over, "
-           "then prints the other side.</p>"
-           "<p>Which way the sheets have to go back in depends on the printer. "
+    // The wizard can be opened from printer settings for any printer, so do
+    // not tell the owner of a duplexer that they have none.
+    const QString why = mPrinter->canAutoDuplex()
+        ? tr("<p>This printer can turn the paper over by itself, and nothing here "
+             "is needed for that. This sets up turning it over by hand instead: "
+             "PlicaPage prints one side of every sheet, waits while you turn the "
+             "stack over, then prints the other side.</p>",
+             "Duplex calibration wizard, first page, for a printer with a duplexer")
+        : tr("<p>Your printer cannot turn the paper over by itself, so PlicaPage "
+             "prints one side of every sheet, waits while you turn the stack over, "
+             "then prints the other side.</p>",
+             "Duplex calibration wizard, first page");
+
+    QLabel *text = new QLabel(why +
+        tr("<p>Which way the sheets have to go back in depends on the printer. "
            "This finds out by printing on <b>two sheets of paper</b> and asking "
            "you what came out.</p>"
            "<p>Put at least two sheets of paper in <b>%1</b> to begin.</p>",

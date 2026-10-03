@@ -662,6 +662,39 @@ void MainWindow::switchPrinterProfile()
 
 
 /************************************************
+ * Returns true if the profile now leaves the turning to the printer.
+ *
+ * Declining needs no flag of its own: the calibration offer that follows
+ * sets one or the other of the two this is conditional on.
+ ************************************************/
+bool MainWindow::offerAutoDuplex()
+{
+    QMessageBox dialog(this);
+    dialog.setWindowTitle(this->windowTitle() + " ");
+    dialog.setIconPixmap(QPixmap(":/48/print"));
+    dialog.setText(tr("<b>%1</b> can print on both sides of the paper by itself, but this "
+                      "profile is set up for turning the paper over by hand.<p>"
+                      "Let the printer turn the paper over?",
+                      "Offered before a manual double-sided print on a printer with a duplexer. "
+                      "%1 is the printer name")
+                   .arg(project->printer()->name()));
+
+    QPushButton *automatic = dialog.addButton(tr("Let the printer do it", "Automatic duplex offer"),
+                                              QMessageBox::AcceptRole);
+    dialog.addButton(tr("I turn it over by hand", "Automatic duplex offer"), QMessageBox::RejectRole);
+    dialog.exec();
+
+    if (dialog.clickedButton() != automatic)
+        return false;
+
+    project->printer()->setDuplexType(DuplexAuto);
+    project->printer()->saveSettings();
+    project->update();
+    return true;
+}
+
+
+/************************************************
 
  ************************************************/
 void MainWindow::offerDuplexCalibration()
@@ -925,11 +958,20 @@ bool MainWindow::print(uint count, bool collate)
     bool split = project->doubleSided() &&
                  project->printer()->duplexType() != DuplexAuto;
 
-    // Which way the paper has to go back in is a property of the printer that
-    // nobody can know without trying it. Offer to find out, once per profile.
     if (split && !project->printer()->duplexCalibrated()
               && !project->printer()->duplexCalibrationDeclined())
-        offerDuplexCalibration();
+    {
+        // A profile saved before PlicaPage could tell, or copied from another
+        // printer, may say "by hand" for a printer that has a duplexer. Ask
+        // before putting anyone through two passes they do not need.
+        if (project->printer()->canAutoDuplex() && offerAutoDuplex())
+            split = false;
+        // Which way the paper has to go back in is a property of the printer
+        // that nobody can know without trying it. Offer to find out, once per
+        // profile.
+        else
+            offerDuplexCalibration();
+    }
 
     if (split)
     {

@@ -41,6 +41,8 @@ public:
 
     QString grayScaleOption() const { return mGrayScaleOption; }
     QString colorOption() const { return mColorOption; }
+
+    /// Whether the printer can turn the paper over itself.
     bool duplex() const { return mDuplex; }
 
 
@@ -64,5 +66,9 @@ private:
     qreal mTopMargin;
     qreal mBottomMargin;
 };
+
+/// What CupsPrinterOptions::duplex() decides from a queue's PPD, for a PPD
+/// that is already on disk.
+bool ppdFileCanDuplex(const QString &ppdFileName);
 
 #endif // CUPSPRINTEROPTIONS_H

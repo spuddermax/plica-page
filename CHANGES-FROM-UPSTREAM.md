@@ -23,6 +23,29 @@ preserved; only the tags were dropped, and they remain in the `upstream` remote
 
 ---
 
+## 2026-10 — Detect a printer's duplexer
+
+A printer was taken to have a duplexer only if its queue printed two-sided *by
+default*. Most duplex printers are set up one-sided, so nearly all of them were
+treated as needing the paper turned by hand, and offered the calibration wizard
+with "Your printer cannot turn the paper over by itself".
+
+`CupsPrinterOptions` now reads what the PPD offers rather than what it marks: a
+`Duplex` option (or a vendor's `JCLDuplex`, `EFDuplex`, `KD03Duplex`) with a
+two-sided choice, unless a `UIConstraints` line rules that choice out against an
+installable option as the queue has it set - an optional duplexer that is not
+fitted. A constraint against a paper size or media type does not count. A queue
+with no PPD is asked through `cupsCheckDestSupported()` instead.
+
+- A printer with no saved profile starts as "Printer turns the paper over
+  itself" when it can.
+- A saved profile is never changed silently. If it says "by hand", has not been
+  calibrated and the printer has a duplexer, the first double-sided print asks
+  whether to let the printer do it; declining leads to the calibration offer as
+  before, and either answer there stops the question being asked again.
+- The wizard, which printer settings can open for any printer, no longer tells
+  the owner of a duplexer that they have none.
+
 ## 2026-10 — Duplex centering test page
 
 The centering test page measured one side only. "Print duplex centering test

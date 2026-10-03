@@ -15,6 +15,7 @@ ui_*.h
 *.autosave
 CMakeLists.txt.user*
 /build
+/screenshots
 /clang_check
 *.pro.user
 *.pro.user.*

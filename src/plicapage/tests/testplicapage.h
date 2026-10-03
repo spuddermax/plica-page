@@ -66,6 +66,8 @@ private slots:
     void test_DuplexPasses();
     void test_DuplexPasses_data();
     void test_DuplexLegacyMigration();
+    void test_PpdCanDuplex();
+    void test_PpdCanDuplex_data();
 
     void test_Units();
     void test_InkBox();

@@ -102,6 +102,117 @@ void findGrayScaleOption(ppd_file_t *ppd, QString *grayScaleOption, QString *col
     *grayScaleOption = grayScaleOnly;
 }
 
+/************************************************
+ * PPD options that select two-sided printing. Duplex is the standard one; the
+ * rest are what some vendors' drivers call it.
+ ************************************************/
+static const char *const duplexOptions[] = {
+    "Duplex", "JCLDuplex", "EFDuplex", "KD03Duplex", 0
+};
+
+
+/************************************************
+ * Whether the hardware the queue says is installed rules this choice out.
+ *
+ * A PPD describes a model, not a machine: a duplexer that is an accessory is
+ * an installable option, and a UIConstraints line forbids the two-sided
+ * choices while it is marked as absent. Only those constraints count here -
+ * one against a paper size or media type says the duplexer cannot take that
+ * paper, not that there is none.
+ ************************************************/
+static bool ruledOutByHardware(ppd_file_t *ppd, const char *option, const char *choice)
+{
+    for (int i = 0; i < ppd->num_consts; ++i)
+    {
+        const ppd_const_t &c = ppd->consts[i];
+
+        // A constraint names two option/choice pairs, in either order.
+        for (int side = 0; side < 2; ++side)
+        {
+            const char *ownOption   = side ? c.option2 : c.option1;
+            const char *ownChoice   = side ? c.choice2 : c.choice1;
+            const char *otherOption = side ? c.option1 : c.option2;
+            const char *otherChoice = side ? c.choice1 : c.choice2;
+
+            // No choice named means every choice but None and False.
+            if (qstricmp(ownOption, option) != 0)
+                continue;
+            if (ownChoice[0] && qstricmp(ownChoice, choice) != 0)
+                continue;
+
+            bool installable = false;
+            for (int g = 0; g < ppd->num_groups && !installable; ++g)
+            {
+                const ppd_group_t &group = ppd->groups[g];
+                if (qstricmp(group.name, "InstallableOptions") != 0)
+                    continue;
+                for (int o = 0; o < group.num_options && !installable; ++o)
+                    installable = qstricmp(group.options[o].keyword, otherOption) == 0;
+            }
+            if (!installable)
+                continue;
+
+            ppd_choice_t *marked = ppdFindMarkedChoice(ppd, otherOption);
+            if (!marked)
+                continue;
+
+            if (otherChoice[0])
+            {
+                if (qstricmp(marked->choice, otherChoice) == 0)
+                    return true;
+            }
+            else if (qstricmp(marked->choice, "None") != 0 && qstricmp(marked->choice, "False") != 0)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+/************************************************
+ * Whether the printer can turn the paper over itself: its PPD offers a
+ * two-sided choice, and the installed hardware allows it.
+ *
+ * What the queue prints by default says nothing about this. Most duplex
+ * printers are set up one-sided, so asking whether a two-sided choice is the
+ * marked one - all this used to do - misses nearly all of them.
+ ************************************************/
+static bool ppdCanDuplex(ppd_file_t *ppd)
+{
+    for (int i = 0; duplexOptions[i]; ++i)
+    {
+        ppd_option_t *option = ppdFindOption(ppd, duplexOptions[i]);
+        if (!option)
+            continue;
+
+        for (int c = 0; c < option->num_choices; ++c)
+        {
+            const char *choice = option->choices[c].choice;
+            // DuplexNoTumble, DuplexTumble and vendors' spellings of them.
+            if (!QString(choice).startsWith("Duplex", Qt::CaseInsensitive))
+                continue;
+            if (!ruledOutByHardware(ppd, option->keyword, choice))
+                return true;
+        }
+    }
+    return false;
+}
+
+
+bool ppdFileCanDuplex(const QString &ppdFileName)
+{
+    ppd_file_t *ppd = ppdOpenFile(ppdFileName.toLocal8Bit().data());
+    if (!ppd)
+        return false;
+
+    ppdMarkDefaults(ppd);
+    const bool res = ppdCanDuplex(ppd);
+    ppdClose(ppd);
+    return res;
+}
+
 
 CupsPrinterOptions::CupsPrinterOptions(const QString &printerName):
     mDuplex(false),
@@ -130,21 +241,21 @@ CupsPrinterOptions::CupsPrinterOptions(const QString &printerName):
     mDeviceURI = QString(cupsGetOption(CUPS_DEVICE_URI, dest->num_options, dest->options));
     //QString duplexStr = cupsGetOption(CUPS_SIDES, dest->num_options, dest->options);
 
-    mDuplex = false;
-    mDuplex = mDuplex || QString(cupsGetOption(CUPS_SIDES, dest->num_options, dest->options)).toUpper().startsWith("TWO-");
-    mDuplex = mDuplex || QString(cupsGetOption("Duplex", dest->num_options, dest->options)).toUpper().startsWith("DUPLEX-");
-    mDuplex = mDuplex || QString(cupsGetOption("JCLDuplex", dest->num_options, dest->options)).toUpper().startsWith("DUPLEX-");
-    mDuplex = mDuplex || QString(cupsGetOption("EFDuplex", dest->num_options, dest->options)).toUpper().startsWith("DUPLEX-");
-    mDuplex = mDuplex || QString(cupsGetOption("KD03Duplex", dest->num_options, dest->options)).toUpper().startsWith("DUPLEX-");
+    // A queue that prints two-sided by default has said it can.
+    mDuplex = QString(cupsGetOption(CUPS_SIDES, dest->num_options, dest->options)).toUpper().startsWith("TWO-");
+    for (int i = 0; duplexOptions[i]; ++i)
+        mDuplex = mDuplex || QString(cupsGetOption(duplexOptions[i], dest->num_options, dest->options)).toUpper().startsWith("DUPLEX");
 
     // Read values from PPD
     // The returned filename is stored in a static buffer
     const char * ppdFile = cupsGetPPD(printerName.toLocal8Bit().data());
+    bool ppdRead = false;
     if (ppdFile != 0)
     {
         ppd_file_t *ppd = ppdOpenFile(ppdFile);
         if (ppd)
         {
+            ppdRead = true;
             ppdMarkDefaults(ppd);
 
             ppd_size_t *size = ppdPageSize(ppd, 0);
@@ -157,14 +268,7 @@ CupsPrinterOptions::CupsPrinterOptions(const QString &printerName):
                 mBottomMargin = size->bottom;
             }
 
-            mDuplex = mDuplex || ppdIsMarked(ppd, "Duplex",     "DuplexNoTumble");
-            mDuplex = mDuplex || ppdIsMarked(ppd, "Duplex",     "DuplexTumble");
-            mDuplex = mDuplex || ppdIsMarked(ppd, "JCLDuplex",  "DuplexNoTumble");
-            mDuplex = mDuplex || ppdIsMarked(ppd, "JCLDuplex",  "DuplexTumble");
-            mDuplex = mDuplex || ppdIsMarked(ppd, "EFDuplex",   "DuplexNoTumble");
-            mDuplex = mDuplex || ppdIsMarked(ppd, "EFDuplex",   "DuplexTumble");
-            mDuplex = mDuplex || ppdIsMarked(ppd, "KD03Duplex", "DuplexNoTumble");
-            mDuplex = mDuplex || ppdIsMarked(ppd, "KD03Duplex", "DuplexTumble");
+            mDuplex = mDuplex || ppdCanDuplex(ppd);
 
 
             // Grayscale options ..........................
@@ -173,6 +277,18 @@ CupsPrinterOptions::CupsPrinterOptions(const QString &printerName):
             ppdClose(ppd);
         }
         QFile::remove(ppdFile);
+    }
+
+    // No PPD to read: ask the queue itself what it supports.
+    if (!ppdRead && !mDuplex)
+    {
+        cups_dinfo_t *info = cupsCopyDestInfo(CUPS_HTTP_DEFAULT, dest);
+        if (info)
+        {
+            mDuplex = cupsCheckDestSupported(CUPS_HTTP_DEFAULT, dest, info, CUPS_SIDES, CUPS_SIDES_TWO_SIDED_PORTRAIT) ||
+                      cupsCheckDestSupported(CUPS_HTTP_DEFAULT, dest, info, CUPS_SIDES, CUPS_SIDES_TWO_SIDED_LANDSCAPE);
+            cupsFreeDestInfo(info);
+        }
     }
 
 

@@ -290,6 +290,10 @@ public:
 
     bool canChangeDuplexType() const { return mCanChangeDuplexType; }
 
+    /// Whether CUPS says the printer can turn the paper over itself. A new
+    /// printer's profile starts as DuplexAuto when it can.
+    bool canAutoDuplex() const { return mCanAutoDuplex; }
+
     virtual bool print(const QList<Sheet*> &sheets, const QString &jobName, bool doubleSided, int numCopies, bool collate) const;
 
     /**
@@ -316,6 +320,7 @@ public:
 
 protected:
     bool mCanChangeDuplexType;
+    bool mCanAutoDuplex;
 
 private:
     const QString mPrinterName;

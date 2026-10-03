@@ -462,6 +462,7 @@ void PrinterProfile::saveSettings() const
  ************************************************/
 Printer::Printer(const QString &printerName):
     mCanChangeDuplexType(true),
+    mCanAutoDuplex(false),
     mPrinterName(printerName),
     mLandscape(-90),
     mCurrentProfileIndex(-1),
@@ -479,7 +480,8 @@ Printer::Printer(const QString &printerName):
         mDefaultCupsProfile.setBottomMargin(cupsOpts.bottomMargin(), UnitPoint);
     }
 
-    if (cupsOpts.duplex())
+    mCanAutoDuplex = cupsOpts.duplex();
+    if (mCanAutoDuplex)
         mDefaultCupsProfile.setDuplexType(DuplexAuto);
 
     mGrayscaleOption = cupsOpts.grayScaleOption();

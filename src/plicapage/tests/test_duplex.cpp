@@ -26,12 +26,14 @@
 #include "testplicapage.h"
 
 #include <QTest>
+#include <QTemporaryFile>
 
 #define protected public
 #define private public
 #include "../plicapagetypes.h"
 #include "../kernel/duplex.h"
 #include "../kernel/printer.h"
+#include "../kernel/cupsprinteroptions.h"
 #include "../settings.h"
 #undef private
 #undef protected
@@ -224,4 +226,111 @@ void TestPlicaPage::test_DuplexLegacyMigration()
 
         settings->endGroup();
     }
+}
+
+
+/************************************************
+ * Whether a printer can turn the paper over itself is read from what its PPD
+ * offers, not from what the queue happens to print by default.
+ ************************************************/
+void TestPlicaPage::test_PpdCanDuplex_data()
+{
+    QTest::addColumn<QString>("body");
+    QTest::addColumn<bool>("expected");
+
+    const QString duplex =
+            "*OpenUI *Duplex/2-Sided Printing: PickOne\n"
+            "*DefaultDuplex: None\n"
+            "*Duplex None/Off: \"<</Duplex false>>setpagedevice\"\n"
+            "*Duplex DuplexNoTumble/Long-Edge: \"<</Duplex true/Tumble false>>setpagedevice\"\n"
+            "*Duplex DuplexTumble/Short-Edge: \"<</Duplex true/Tumble true>>setpagedevice\"\n"
+            "*CloseUI: *Duplex\n";
+
+    const QString duplexer =
+            "*OpenGroup: InstallableOptions/Options Installed\n"
+            "*OpenUI *OptionDuplex/Duplexer: Boolean\n"
+            "*DefaultOptionDuplex: %1\n"
+            "*OptionDuplex True/Installed: \"\"\n"
+            "*OptionDuplex False/Not Installed: \"\"\n"
+            "*CloseUI: *OptionDuplex\n"
+            "*CloseGroup: InstallableOptions\n";
+
+    // The case that started this: brlaser's Brother HL-2270DW, which has a
+    // duplexer and a queue that prints one-sided unless asked.
+    QTest::newRow("one-sided by default") << duplex << true;
+
+    QTest::newRow("two-sided by default")
+            << QString(duplex).replace("*DefaultDuplex: None", "*DefaultDuplex: DuplexNoTumble") << true;
+
+    QTest::newRow("no duplex option") << QString() << false;
+
+    QTest::newRow("only a one-sided choice")
+            << QString("*OpenUI *Duplex/2-Sided Printing: PickOne\n"
+                       "*DefaultDuplex: None\n"
+                       "*Duplex None/Off: \"\"\n"
+                       "*CloseUI: *Duplex\n") << false;
+
+    QTest::newRow("vendor's option name")
+            << QString(duplex).replace("*Duplex", "*JCLDuplex")
+                              .replace("*DefaultDuplex", "*DefaultJCLDuplex") << true;
+
+    // An optional duplexer the queue says is not fitted, ruled out both ways a
+    // PPD can spell it: choice by choice, and for the whole option.
+    QTest::newRow("duplexer not installed")
+            << duplexer.arg("False") + duplex +
+               "*UIConstraints: *OptionDuplex False *Duplex DuplexNoTumble\n"
+               "*UIConstraints: *OptionDuplex False *Duplex DuplexTumble\n" << false;
+
+    QTest::newRow("duplexer not installed, constraint reversed")
+            << duplexer.arg("False") + duplex +
+               "*UIConstraints: *Duplex *OptionDuplex False\n" << false;
+
+    QTest::newRow("duplexer installed")
+            << duplexer.arg("True") + duplex +
+               "*UIConstraints: *OptionDuplex False *Duplex DuplexNoTumble\n"
+               "*UIConstraints: *OptionDuplex False *Duplex DuplexTumble\n" << true;
+
+    // The duplexer cannot take envelopes. That is about the paper, not about
+    // whether there is a duplexer.
+    QTest::newRow("constrained by paper only")
+            << duplex +
+               "*UIConstraints: *PageSize Letter *Duplex DuplexNoTumble\n"
+               "*UIConstraints: *PageSize Letter *Duplex DuplexTumble\n" << true;
+}
+
+
+/************************************************
+ *
+ ************************************************/
+void TestPlicaPage::test_PpdCanDuplex()
+{
+    QFETCH(QString, body);
+    QFETCH(bool,    expected);
+
+    QTemporaryFile file;
+    QVERIFY(file.open());
+    file.write("*PPD-Adobe: \"4.3\"\n"
+               "*FormatVersion: \"4.3\"\n"
+               "*FileVersion: \"1.0\"\n"
+               "*LanguageVersion: English\n"
+               "*LanguageEncoding: ISOLatin1\n"
+               "*PCFileName: \"TEST.PPD\"\n"
+               "*Manufacturer: \"Test\"\n"
+               "*Product: \"(Test)\"\n"
+               "*ModelName: \"Test\"\n"
+               "*ShortNickName: \"Test\"\n"
+               "*NickName: \"Test\"\n"
+               "*PSVersion: \"(3010.000) 0\"\n"
+               "*OpenUI *PageSize/Media Size: PickOne\n"
+               "*DefaultPageSize: Letter\n"
+               "*PageSize Letter/Letter: \"\"\n"
+               "*PageSize A4/A4: \"\"\n"
+               "*CloseUI: *PageSize\n"
+               "*DefaultPaperDimension: Letter\n"
+               "*PaperDimension Letter/Letter: \"612 792\"\n"
+               "*PaperDimension A4/A4: \"595 842\"\n");
+    file.write(body.toLatin1());
+    file.close();
+
+    QCOMPARE(ppdFileCanDuplex(file.fileName()), expected);
 }

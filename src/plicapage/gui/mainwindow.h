@@ -57,6 +57,7 @@ private slots:
     void switchLayout();
     void switchPrinterProfile();
     void offerDuplexCalibration();
+    bool offerAutoDuplex();
     void switchTrimMode();
     void trimPaddingChanged();
     void foldLineChanged();
