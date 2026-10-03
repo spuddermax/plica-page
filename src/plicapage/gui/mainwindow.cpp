@@ -150,8 +150,10 @@ MainWindow::MainWindow(QWidget *parent):
     connect(ui->doubleSidedCbx, SIGNAL(clicked(bool)),
             project, SLOT(setDoubleSided(bool)));
 
-    // clicked(), not toggled()/valueChanged(): these widgets are also written
-    // to by updateTrimWidgets(), and only a real click should drive a re-render.
+    // clicked(), not toggled(): these widgets are also written to by
+    // updateTrimWidgets(), and only a real click should drive a re-render.
+    // The padding spinbox below can use valueChanged() because
+    // updateTrimWidgets() blocks its signals while setting it.
     connect(ui->trimBox, SIGNAL(clicked(bool)),
             project, SLOT(setTrimWhitespace(bool)));
 
@@ -161,7 +163,10 @@ MainWindow::MainWindow(QWidget *parent):
     connect(ui->trimUniformBtn, SIGNAL(clicked()),
             this, SLOT(switchTrimMode()));
 
-    connect(ui->trimPaddingSpin, SIGNAL(editingFinished()),
+    // As for the stitch spacing: arrows and the wheel apply at once, typed
+    // digits on Enter or leaving the field.
+    ui->trimPaddingSpin->setKeyboardTracking(false);
+    connect(ui->trimPaddingSpin, SIGNAL(valueChanged(double)),
             this, SLOT(trimPaddingChanged()));
 
     ui->foldLineCombo->addItem(tr("None", "Fold line"),                         FoldLineNone);
