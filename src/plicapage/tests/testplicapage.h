@@ -80,6 +80,27 @@ private slots:
     void test_FoldLineStitches_data();
     void test_FoldLineSheets();
     void test_FoldLineStrings();
+    void test_StitchMarksPrintSheets();
+    void test_StitchMarksPrintSheets_data();
+    void test_StitchMarksPreviewSheets();
+    void test_StitchMarksDrawn();
+    void test_StitchMarksDrawn_data();
+    void test_StitchMarksStrings();
+    void test_UndoDeletePages();
+    void test_FoldLineColor();
+    void test_PageSelection();
+    void test_DeleteSelectedPages();
+    void test_HardwareMargins();
+    void test_PageTurnedOnPaper();
+    void test_SheetGoesThroughTurned();
+    void test_SheetGoesThroughTurned_data();
+    void test_TurnMargins();
+    void test_PrintSheetIndex();
+    void test_PaperPosition();
+    void test_PaperPosition_data();
+    void test_SheetDescription();
+    void test_PrintableAreaReport();
+    void test_PpdWithPaperSizes();
 
     void test_RenderReloadRace();
     void test_RenderCrossInstanceRace();

@@ -65,6 +65,7 @@ private slots:
     void updateWidgets();
     void updateProfile();
     void updatePreview();
+    void updateHardwareMarginsNote();
     void runDuplexWizard();
 
     void btnClicked(QAbstractButton *button);

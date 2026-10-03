@@ -502,8 +502,11 @@ void LayoutBooklet::fillSheetsForBook(int bookStart, int bookLength, QList<Sheet
 
 
         // Sheet 1 **************************
+        // The back of sheet 0, which is the inside once folded. The last one
+        // written is the innermost sheet, whose inside is the centre spread.
         sheet = new Sheet(2, sheets->count());
-        sheet->setHints(Sheet::HintDrawFold);
+        sheet->setHints(Sheet::HintDrawFold | Sheet::HintInsideFace);
+        sheet->setHint(Sheet::HintCenterSpread, i + 2 >= cnt / 2);
         sheet->setRotation(project->rotation());
         sheets->append(sheet);
 
@@ -627,8 +630,14 @@ void LayoutBooklet::fillPreviewSheetsForBook(int bookStart, int bookLength, QLis
         }
         else
         {
+            // A reading spread is not one face of a sheet: away from the
+            // centre, one of its pages is on the inside of a sheet and the
+            // other on the outside of the next. So every spread counts as
+            // showing an inside face, and only the centre one is the spread
+            // that is stitched.
             sheet = new Sheet(2, sheets->count());
-            sheet->setHints(Sheet::HintDrawFold);
+            sheet->setHints(Sheet::HintDrawFold | Sheet::HintInsideFace);
+            sheet->setHint(Sheet::HintCenterSpread, i == cnt / 2 - 1);
             *sheets << sheet;
         }
 

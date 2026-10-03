@@ -169,6 +169,17 @@ enum FoldLine {
 QString foldLineToStr(FoldLine value);
 FoldLine strToFoldLine(const QString &str);
 
+// Which booklet sheet faces a FoldLineStitched fold puts its cross marks on.
+// The others still get the dotted line.
+enum StitchMarks {
+    StitchMarksAllFaces    = 0,
+    StitchMarksInsideFaces = 1,     // the inside of each folded sheet
+    StitchMarksCenter      = 2      // the centre spread of each booklet only
+};
+
+QString stitchMarksToStr(StitchMarks value);
+StitchMarks strToStitchMarks(const QString &str);
+
 struct PdfPageInfo
 {
     PdfPageInfo(): rotate(0) {}

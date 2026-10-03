@@ -32,6 +32,9 @@
 #include "projectpage.h"
 
 #include <QObject>
+#include <QColor>
+#include <QHash>
+#include <QMarginsF>
 #include <QList>
 #include <QStringList>
 #include <QImage>
@@ -144,6 +147,10 @@ public:
     FoldLine foldLine() const { return mFoldLine; }
     /// Distance between stitch marks on a FoldLineStitched fold, in points.
     qreal stitchSpacing() const { return mStitchSpacing; }
+    /// Which sheet faces get the stitch marks.
+    StitchMarks stitchMarks() const { return mStitchMarks; }
+    /// Colour of the fold line and its stitch marks.
+    QColor foldLineColor() const { return mFoldLineColor; }
 
     /**
      * The union of every page's ink box, used when all pages are to share one
@@ -173,10 +180,78 @@ public:
 
     void deletePage(ProjectPage *page);
     void undoDeletePage(ProjectPage *page);
+    void deletePages(const QList<ProjectPage*> &pages);
+    void deleteSelectedPages();
+
+    // A plain click, a Ctrl+click and a Shift+click on a page. With add set,
+    // a range is added to the selection instead of replacing it.
+    void selectPage(ProjectPage *page);
+    void togglePageSelection(ProjectPage *page);
+    void selectPageRange(ProjectPage *page, bool add = false);
+    void clearSelection();
+    void undoDeletePages(const QList<ProjectPage*> &pages);
 
     void deletePagesEnd(ProjectPage *page);
     void insertBlankPageBefore(ProjectPage *page);
     void insertBlankPageAfter(ProjectPage *page);
+
+    /// Where a page is printed: its sheet's index in Layout::fillSheets(),
+    /// or -1 for a page that is not laid out.
+    int printSheetIndex(const ProjectPage *page) const { return mPrintSheetOfPage.value(page, -1); }
+
+    /// Pieces of paper the job takes: sheetCount() counts printed sides when
+    /// double-sided, two to a piece.
+    int paperCount() const;
+
+    /// The piece of paper a printed sheet is on, from 0, and whether it is
+    /// that paper's second side - the back, or a booklet's inside.
+    int paperOf(int printSheetIndex) const;
+    bool isSecondSide(int printSheetIndex) const;
+
+    /// "Sheet 2 of 4, back" - the paper a printed sheet is on, and the side
+    /// when printing double-sided. Shared by the status bar and the preview.
+    QString sheetDescription(int printSheetIndex) const;
+
+    /// The printer's limits on a printed sheet, measured in the layout's frame:
+    /// turned round for a sheet that goes through the printer turned.
+    QMarginsF hardwareMargins(int printSheetIndex) const;
+
+    /// The printer's limit on each edge of the layout's frame, over every
+    /// printed side: what the profile's margins have to reach for every page
+    /// to fit, wherever it is placed.
+    QMarginsF hardwareLimit() const;
+
+    /// How far the page in a slot of a preview sheet reaches past the printer's
+    /// limit for the side it is printed on, edge by edge in the layout's frame;
+    /// all zero when it fits.
+    QMarginsF pageOverflow(const Sheet *sheet, int pageNumOnSheet) const;
+
+    struct ClippedPage
+    {
+        ProjectPage *page;
+        QMarginsF    overflow;  ///< layout's frame, as pageOverflow()
+        QRectF       rect;      ///< where it is placed, layout's frame
+    };
+
+    /// Every page the printer would cut off, in page order.
+    QList<ClippedPage> clippedPages() const;
+
+    /**
+     * Whether the whole job fits the printer, as lines of text: a single line
+     * when it does; otherwise which pages are cut off, at which edge and by
+     * how much, then which margins would make everything fit. Empty when the
+     * printer's driver gives no limits. Lengths are in the chosen unit.
+     */
+    QStringList printableAreaReport(bool *fits) const;
+
+    /// Raises each profile margin that some page crosses to the printer's
+    /// limit on that edge, saves the profile and lays out again. Returns
+    /// whether anything changed.
+    bool fitMarginsToPrinter();
+
+    /// Pages picked in the preview, in page order.
+    QList<ProjectPage*> selectedPages() const;
+    bool isSelected(const ProjectPage *page) const { return mSelectedPages.contains(const_cast<ProjectPage*>(page)); }
 
     ProjectPage *prevVisiblePage(ProjectPage *current) const;
     ProjectPage *nextVisiblePage(ProjectPage *current) const;
@@ -214,6 +289,8 @@ public slots:
     void setTrimPadding(qreal points);
     void setFoldLine(FoldLine value);
     void setStitchSpacing(qreal points);
+    void setStitchMarks(StitchMarks value);
+    void setFoldLineColor(const QColor &value);
     void update();
 
 
@@ -223,6 +300,7 @@ signals:
     void tmpFileRenamed(const QString &mTmpFileName);
     void currentPageChanged(ProjectPage *page);
     void currentPageChanged(int page);
+    void selectionChanged();
     void currentSheetChanged(Sheet *sheet);
     void currentSheetChanged(int sheet);
     void longTaskStarted(const ProjectLongTask *task);
@@ -258,6 +336,11 @@ private:
     qreal mTrimPadding;
     FoldLine mFoldLine;
     qreal mStitchSpacing;
+    StitchMarks mStitchMarks;
+    QColor mFoldLineColor;
+    QList<ProjectPage*> mSelectedPages;
+    QHash<const ProjectPage*, int> mPrintSheetOfPage;
+    ProjectPage *mSelectionAnchor;
     bool mInkBoxesReady;
     QRectF mUniformInkBox;
 

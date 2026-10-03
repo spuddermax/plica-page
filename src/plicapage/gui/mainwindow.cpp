@@ -41,6 +41,8 @@
 #include "export/exporttopdf.h"
 #include "printdialog/printdialog.h"
 #include "duplexwizard/duplexwizard.h"
+#include "papersizes/papersizesdialog.h"
+#include "kernel/papersizes.h"
 #include "plicapagetypes.h"
 
 #ifdef Q_OS_MAC
@@ -57,6 +59,8 @@
 #include <QTimer>
 #include <QKeyEvent>
 #include <QFileDialog>
+#include <QColorDialog>
+#include <QPainter>
 #include <QMimeData>
 #include <QInputDialog>
 #include <QDateTime>
@@ -173,6 +177,16 @@ MainWindow::MainWindow(QWidget *parent):
     connect(ui->stitchSpacingSpin, SIGNAL(editingFinished()),
             this, SLOT(stitchSpacingChanged()));
 
+    ui->stitchMarksCombo->addItem(tr("All sides", "Stitch marks"),              StitchMarksAllFaces);
+    ui->stitchMarksCombo->addItem(tr("Stitch side only", "Stitch marks"),       StitchMarksInsideFaces);
+    ui->stitchMarksCombo->addItem(tr("Center of booklet only", "Stitch marks"), StitchMarksCenter);
+
+    connect(ui->stitchMarksCombo, SIGNAL(activated(int)),
+            this, SLOT(stitchMarksChanged()));
+
+    connect(ui->foldLineColorBtn, SIGNAL(clicked()),
+            this, SLOT(chooseFoldLineColor()));
+
     connect(ui->jobsView, SIGNAL(pageSelected(int)),
             project, SLOT(setCurrentPage(int)));
 
@@ -218,6 +232,22 @@ MainWindow::MainWindow(QWidget *parent):
 
     connect(project, SIGNAL(longTaskStarted(const ProjectLongTask*)),
             this , SLOT(longTaskStarted(const ProjectLongTask*)));
+
+    // Owned by the window, not a menu, so its shortcut works whether or not a
+    // menu is open; the page menus borrow it. Text fields still get their
+    // own Delete key, as they claim it before window shortcuts are tried.
+    mDeleteSelectedAct = new QAction(this);
+    mDeleteSelectedAct->setShortcut(QKeySequence::Delete);
+    connect(mDeleteSelectedAct, SIGNAL(triggered()), this, SLOT(deleteSelectedPages()));
+    addAction(mDeleteSelectedAct);
+
+    connect(ui->fitMarginsBtn, SIGNAL(clicked()), this, SLOT(fitMarginsToPrinter()));
+
+    ui->menuPreferences->addAction(tr("Paper sizes for applications..."),
+                                   this, SLOT(showPaperSizesDialog()));
+
+    // A fresh queue, or one reinstalled, has only the template's sizes.
+    QTimer::singleShot(0, this, SLOT(syncPaperSizes()));
 
     ui->preview->setFocusPolicy(Qt::StrongFocus);
     ui->preview->setFocus();
@@ -338,6 +368,8 @@ void MainWindow::loadSettings()
     project->setTrimWhitespace(settings->value(Settings::TrimWhitespace).toBool());
 
     project->setStitchSpacing(settings->value(Settings::StitchSpacing).toDouble());
+    project->setStitchMarks(strToStitchMarks(settings->value(Settings::StitchMarks).toString()));
+    project->setFoldLineColor(QColor(settings->value(Settings::FoldLineColor).toString()));
     project->setFoldLine(strToFoldLine(settings->value(Settings::FoldLine).toString()));
 
     ui->jobsView->setIconSize(settings->value(Settings::MainWindow_PageListIconSize).toInt());
@@ -368,6 +400,8 @@ void MainWindow::saveSettings()
 
     settings->setValue(Settings::FoldLine, foldLineToStr(project->foldLine()));
     settings->setValue(Settings::StitchSpacing, project->stitchSpacing());
+    settings->setValue(Settings::StitchMarks, stitchMarksToStr(project->stitchMarks()));
+    settings->setValue(Settings::FoldLineColor, project->foldLineColor().name());
 
 
     if (project->printer() != Printer::nullPrinter())
@@ -513,36 +547,35 @@ void MainWindow::updateWidgets()
 
     updateTrimWidgets();
     updateFoldLineWidgets();
+    updateMarginNotice();
 
     // Update status bar ..........................
+    // A "sheet" here is always a piece of paper, in both labels. The preview
+    // steps through printed sides - or, for a booklet, reading spreads - so
+    // the current sheet is the one the current page is printed on, found
+    // through the printed layout rather than the preview's position.
     if (project->pageCount())
     {
-        int sheetsCount = project->doubleSided() ?
-                          ceil(project->sheetCount() / 2.0) :
-                          project->sheetCount();
+        const int papers = project->paperCount();
+        const int printSheet = project->printSheetIndex(project->currentPage());
 
-
-        QString pagesStr;
         if (project->currentPage())
-        {
-            pagesStr = tr("Page %1 of %2", "Status bar")
-                    .arg(project->currentPageNum() + 1)
-                    .arg(project->pageCount());
-        }
+            mStatusBarSheetsLabel.setText(tr("Page %1 of %2", "Status bar")
+                                          .arg(project->currentPageNum() + 1)
+                                          .arg(project->pageCount()));
         else
-        {
-            pagesStr = ((project->pageCount() > 1) ? tr("%1 pages", "Status bar") : tr("%1 page", "Status bar"))
-                    .arg(project->pageCount());
-        }
+            mStatusBarSheetsLabel.setText(((project->pageCount() > 1) ? tr("%1 pages", "Status bar")
+                                                                      : tr("%1 page", "Status bar"))
+                                          .arg(project->pageCount()));
 
-        QString sheetsStr = ((sheetsCount > 1) ? tr("%1 sheets", "Status bar") : tr("%1 sheet", "Status bar"))
-                    .arg(sheetsCount);
-
-        mStatusBarSheetsLabel.setText(pagesStr + " ( " + sheetsStr + " )");
-        mStatusBarCurrentSheetLabel.setText(tr("Sheet %1 of %2", "Status bar")
-                                .arg(project->currentSheetNum() + 1)
-                                .arg(project->previewSheetCount()));
-
+        // The sheet label carries the paper count; without a current page to
+        // place, give the count on its own.
+        if (printSheet >= 0)
+            mStatusBarCurrentSheetLabel.setText(project->sheetDescription(printSheet));
+        else
+            mStatusBarCurrentSheetLabel.setText(((papers > 1) ? tr("%1 sheets", "Status bar")
+                                                              : tr("%1 sheet", "Status bar"))
+                                                .arg(papers));
     }
     else
     {
@@ -674,6 +707,58 @@ void MainWindow::stitchSpacingChanged()
 
 
 /************************************************
+
+ ************************************************/
+void MainWindow::stitchMarksChanged()
+{
+    project->setStitchMarks((StitchMarks)ui->stitchMarksCombo->currentData().toInt());
+}
+
+
+/************************************************
+
+ ************************************************/
+void MainWindow::chooseFoldLineColor()
+{
+    const QColor color = QColorDialog::getColor(project->foldLineColor(), this,
+                                                tr("Fold line color"));
+    // Invalid when the dialog is cancelled.
+    if (color.isValid())
+        project->setFoldLineColor(color);
+}
+
+
+/************************************************
+ * The bar above the preview: whether every page of the job fits what the
+ * printer can reach, and if not, what to change.
+ ************************************************/
+void MainWindow::updateMarginNotice()
+{
+    bool fits = true;
+    const QStringList lines = project->printableAreaReport(&fits);
+    ui->marginNoticeBar->setVisible(!lines.isEmpty());
+    ui->fitMarginsBtn->setVisible(!fits);
+    if (lines.isEmpty())
+        return;
+
+    QStringList html;
+    foreach (const QString &line, lines)
+        html << line.toHtmlEscaped();
+
+    if (fits)
+    {
+        ui->marginNoticeBar->setStyleSheet("#marginNoticeBar { background: #e6f4ea; } QLabel { color: #1e6b34; }");
+        ui->marginNotice->setText(QString("\u2714 ") + html.join("<br>"));
+    }
+    else
+    {
+        ui->marginNoticeBar->setStyleSheet("#marginNoticeBar { background: #fdecea; } QLabel { color: #a1281e; }");
+        ui->marginNotice->setText(QString("\u26a0 <b>%1</b><br>").arg(html.takeFirst()) + html.join("<br>"));
+    }
+}
+
+
+/************************************************
  * The fold line belongs to the booklet layout alone, so it is shown only
  * while that layout is chosen.
  ************************************************/
@@ -688,6 +773,26 @@ void MainWindow::updateFoldLineWidgets()
     const bool stitched = project->foldLine() == FoldLineStitched;
     ui->stitchSpacingLbl->setEnabled(stitched);
     ui->stitchSpacingSpin->setEnabled(stitched);
+    ui->stitchMarksLbl->setEnabled(stitched);
+    ui->stitchMarksCombo->setEnabled(stitched);
+
+    ui->stitchMarksCombo->setCurrentIndex(ui->stitchMarksCombo->findData(project->stitchMarks()));
+
+    const bool anyLine = project->foldLine() != FoldLineNone;
+    ui->foldLineColorLbl->setEnabled(anyLine);
+    ui->foldLineColorBtn->setEnabled(anyLine);
+
+    // A swatch, framed so a pale colour still shows against the button.
+    QPixmap swatch(32, 16);
+    swatch.fill(project->foldLineColor());
+    {
+        QPainter painter(&swatch);
+        painter.setPen(palette().color(QPalette::WindowText));
+        painter.drawRect(swatch.rect().adjusted(0, 0, -1, -1));
+    }
+    ui->foldLineColorBtn->setIconSize(swatch.size());
+    ui->foldLineColorBtn->setIcon(QIcon(swatch));
+    ui->foldLineColorBtn->setText(project->foldLineColor().name());
 
     ui->stitchSpacingSpin->blockSignals(true);
     ui->stitchSpacingSpin->setDecimals(unitDecimals(unit));
@@ -1103,11 +1208,30 @@ void MainWindow::fillPageEditMenu(ProjectPage *page, QMenu *menu)
     connect(act, SIGNAL(triggered()), this, SLOT(deletePagesEnd()));
     act->setEnabled(page);
     menu->addAction(act);
+
+    {
+        const int n = project->selectedPages().count();
+        // Spelled out: %n plurals only resolve through a translation file, so
+        // the untranslated English would read "page(s)".
+        if (n == 1)
+            mDeleteSelectedAct->setText(tr("Delete 1 selected page"));
+        else if (n > 1)
+            mDeleteSelectedAct->setText(tr("Delete %1 selected pages").arg(n));
+        else
+            mDeleteSelectedAct->setText(tr("Delete selected pages"));
+        mDeleteSelectedAct->setEnabled(n > 0);
+        menu->addAction(mDeleteSelectedAct);
+    }
     // Delete page ...................................
 
     // Undo delete ...................................
     QMenu *undelMenu = menu->addMenu(tr("Undo delete"));
     undelMenu->setEnabled(false);
+
+    // Removed again below if nothing is deleted.
+    QAction *allAct = undelMenu->addAction(tr("All deleted pages"),
+                                           this, SLOT(undoDeleteAllPages()));
+    QAction *allSep = undelMenu->addSeparator();
 
 
     for(int j=0; j<project->jobs()->count(); ++j)
@@ -1131,8 +1255,13 @@ void MainWindow::fillPageEditMenu(ProjectPage *page, QMenu *menu)
         }
 
         undelMenu->setStyleSheet("* {menu-scrollable: 1 }");
-        undelMenu->setEnabled(undelMenu->actions().count() > 0);
     }
+
+    // The "all" item and its separator are not deleted pages.
+    const bool anyDeleted = undelMenu->actions().count() > 2;
+    allAct->setVisible(anyDeleted);
+    allSep->setVisible(anyDeleted);
+    undelMenu->setEnabled(anyDeleted);
     // Undo delete ...................................
 }
 
@@ -1179,6 +1308,13 @@ void MainWindow::fillJobEditMenu(const Job &job, QMenu *menu)
     QMenu *undelMenu = menu->addMenu(tr("Undo delete page"));
     undelMenu->setEnabled(false);
 
+    {
+        JobAction *allAct = new JobAction(tr("All deleted pages in this job"), job, undelMenu);
+        connect(allAct, SIGNAL(triggered()), this, SLOT(undoDeleteJobPages()));
+        undelMenu->addAction(allAct);
+        undelMenu->addSeparator();
+    }
+
     for(int p=0; p<job.pageCount(); ++p)
     {
         ProjectPage *page = job.page(p);
@@ -1191,7 +1327,8 @@ void MainWindow::fillJobEditMenu(const Job &job, QMenu *menu)
 
         undelMenu->addAction(act);
     }
-    undelMenu->setEnabled(undelMenu->isEnabled() || !undelMenu->isEmpty());
+    // Two entries are the "all" item and its separator, not deleted pages.
+    undelMenu->setEnabled(undelMenu->actions().count() > 2);
     // ...............................................
 
 
@@ -1220,6 +1357,51 @@ void MainWindow::deletePage()
 /************************************************
 
  ************************************************/
+void MainWindow::showPaperSizesDialog()
+{
+    PaperSizesDialog dialog(this);
+    dialog.exec();
+}
+
+
+/************************************************
+
+ ************************************************/
+void MainWindow::fitMarginsToPrinter()
+{
+    if (project->fitMarginsToPrinter())
+        ui->statusbar->showMessage(tr("Margins raised to the printer's limits."), 4000);
+}
+
+
+/************************************************
+ * Quietly: a failure here, e.g. without the rights to change printers, only
+ * means the sizes are not offered until the dialog is used.
+ ************************************************/
+void MainWindow::syncPaperSizes()
+{
+    const QList<UserPaperSize> sizes = userPaperSizes();
+    if (!queuesNeedPaperSizes(sizes))
+        return;
+
+    QString error;
+    if (!installPaperSizes(sizes, &error))
+        qWarning() << "Paper sizes not installed:" << error;
+}
+
+
+/************************************************
+
+ ************************************************/
+void MainWindow::deleteSelectedPages()
+{
+    project->deleteSelectedPages();
+}
+
+
+/************************************************
+
+ ************************************************/
 void MainWindow::undoDeletePage()
 {
     PageAction *act = qobject_cast<PageAction*>(sender());
@@ -1227,6 +1409,41 @@ void MainWindow::undoDeletePage()
         return;
 
     project->undoDeletePage(act->page());
+}
+
+
+/************************************************
+
+ ************************************************/
+void MainWindow::undoDeleteAllPages()
+{
+    QList<ProjectPage*> pages;
+    for (int j=0; j<project->jobs()->count(); ++j)
+    {
+        const Job job = project->jobs()->at(j);
+        for (int p=0; p<job.pageCount(); ++p)
+            pages << job.page(p);
+    }
+
+    project->undoDeletePages(pages);
+}
+
+
+/************************************************
+
+ ************************************************/
+void MainWindow::undoDeleteJobPages()
+{
+    JobAction *act = qobject_cast<JobAction*>(sender());
+    if (!act)
+        return;
+
+    const Job job = act->job();
+    QList<ProjectPage*> pages;
+    for (int p=0; p<job.pageCount(); ++p)
+        pages << job.page(p);
+
+    project->undoDeletePages(pages);
 }
 
 

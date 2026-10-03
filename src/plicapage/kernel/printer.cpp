@@ -463,6 +463,7 @@ void PrinterProfile::saveSettings() const
 Printer::Printer(const QString &printerName):
     mCanChangeDuplexType(true),
     mPrinterName(printerName),
+    mLandscape(-90),
     mCurrentProfileIndex(-1),
     mCurrentProfile(0)
 {
@@ -488,6 +489,7 @@ Printer::Printer(const QString &printerName):
         PpdOptions ppd(mPrinterName);
         mPaperSizes = ppd.paperSizes();
         mDefaultPaperSizeName = ppd.defaultPaperSize();
+        mLandscape = ppd.landscapeOrientation();
     }
 
     readSettings();
@@ -665,6 +667,39 @@ QRectF Printer::paperRect(Unit unit) const
 /************************************************
 
  ************************************************/
+bool Printer::pageTurnedOnPaper(Rotation rotation) const
+{
+    switch (rotation)
+    {
+    case NoRotate:  return false;
+    case Rotate90:  return landscapeMinus90();
+    case Rotate180: return true;
+    case Rotate270: return !landscapeMinus90();
+    }
+    return false;
+}
+
+
+/************************************************
+
+ ************************************************/
+QMarginsF Printer::hardwareMargins(const PrinterProfile &profile) const
+{
+    const QString name = profile.paperSizeName().isEmpty() ? mDefaultPaperSizeName
+                                                           : profile.paperSizeName();
+    foreach (const PpdPaperSize &p, mPaperSizes)
+    {
+        if (p.keyword == name)
+            return QMarginsF(p.left, p.top, p.right, p.bottom);
+    }
+
+    return QMarginsF();
+}
+
+
+/************************************************
+
+ ************************************************/
 QRectF Printer::pageRect(Unit unit) const
 {
     return paperRect(unit).adjusted(
@@ -697,9 +732,12 @@ bool Printer::print(const QList<Sheet *> &sheets, const QString &jobName, bool d
     project->writeDocument(sheets, file);
 
 #ifndef DEBUG_PRINT
-    return printFile(file, jobName, doubleSided, numCopies, collate);
+    // A manual double-sided job is two one-sided passes whose sheet order
+    // PlicaPage has worked out itself; the queue must not reverse it.
+    const bool manualPass = doubleSided && duplexType() != DuplexAuto;
+    return printFile(file, jobName, doubleSided, numCopies, collate, manualPass);
 #else
-    printFile(file, jobName, doubleSided, numCopies, collate);
+    printFile(file, jobName, doubleSided, numCopies, collate, doubleSided && duplexType() != DuplexAuto);
 
     QString fileName;
     {
@@ -721,13 +759,21 @@ bool Printer::print(const QList<Sheet *> &sheets, const QString &jobName, bool d
  * calibration sheets, which are drawn rather than composed from Sheets, can go
  * to the printer the same way a real job does.
  ************************************************/
-bool Printer::printFile(const QString &fileName, const QString &jobName, bool doubleSided, int numCopies, bool collate) const
+bool Printer::printFile(const QString &fileName, const QString &jobName, bool doubleSided, int numCopies, bool collate,
+                        bool keepPageOrder) const
 {
     QStringList args;
     args << "-P" << name();                       // Prints files to the named printer.
     args << "-#" << QString("%1").arg(numCopies); // Sets the number of copies to print
     args << "-T" << jobName;                      // Sets the job name.
     args << "-r";                                 // The print files should be deleted after printing them
+
+    // A queue for a face-up printer reverses every job so that a one-sided
+    // stack comes out with page 1 on top. Each pass of a manual double-sided
+    // job is planned sheet by sheet - which sheet the next pass meets first,
+    // which ends up outermost in a booklet - and reversing it breaks that.
+    if (keepPageOrder)
+        args << "-o outputorder=normal";
 
     // Duplex options ...........................
     if (duplexType() == DuplexAuto && doubleSided)

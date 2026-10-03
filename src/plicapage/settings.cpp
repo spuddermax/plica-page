@@ -133,6 +133,8 @@ QString Settings::keyToString(Settings::Key key) const
 
     case FoldLine:                      return "Project/FoldLine";
     case StitchSpacing:                 return "Project/StitchSpacing";
+    case StitchMarks:                   return "Project/StitchMarks";
+    case FoldLineColor:                 return "Project/FoldLineColor";
 
     // Preferences **************************
     case Preferences_Geometry:          return "Preferences/Geometry";
@@ -222,6 +224,8 @@ void Settings::init()
 
     setDefaultValue(FoldLine, foldLineToStr(FoldLineNone));
     setDefaultValue(StitchSpacing, fromUnit(2.0, UnitInch));
+    setDefaultValue(StitchMarks, stitchMarksToStr(StitchMarksAllFaces));
+    setDefaultValue(FoldLineColor, "#999999");
 
     QString dir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     dir = shrinkHomeDir(dir);

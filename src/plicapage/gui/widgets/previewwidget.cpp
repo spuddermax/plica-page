@@ -35,6 +35,10 @@
 #include <QWheelEvent>
 #include <QDebug>
 #include <QRectF>
+#include <QTimer>
+#include <QToolTip>
+#include "kernel/job.h"
+#include "kernel/printer.h"
 
 #define MARGIN_H        20
 #define MARGIN_V        20
@@ -150,8 +154,17 @@ PreviewWidget::PreviewWidget(QWidget *parent) :
     QFrame(parent),
     mDisplayedSheetNum(-1),
     mScaleFactor(0),
-    mWheelDelta(0)
+    mWheelDelta(0),
+    mHoverTimer(new QTimer(this)),
+    mHoverPage(nullptr)
 {
+    // Page details after a two-second hover: long enough not to get in the
+    // way of clicking about, unlike Qt's own tooltip delay.
+    setMouseTracking(true);
+    mHoverTimer->setSingleShot(true);
+    mHoverTimer->setInterval(2000);
+    connect(mHoverTimer, SIGNAL(timeout()), this, SLOT(showPageToolTip()));
+
     QPalette pal(palette());
     pal.setColor(QPalette::Background, QColor(105, 101, 98));
     setPalette(pal);
@@ -159,6 +172,9 @@ PreviewWidget::PreviewWidget(QWidget *parent) :
 
     connect(project, SIGNAL(changed()),
             this, SLOT(refresh()));
+
+    connect(project, SIGNAL(selectionChanged()),
+            this, SLOT(update()));
 
     mRender = new RenderCache(RESOLUTIN, 8, this);
 
@@ -176,6 +192,32 @@ PreviewWidget::PreviewWidget(QWidget *parent) :
 PreviewWidget::~PreviewWidget()
 {
     delete mRender;
+}
+
+
+/************************************************
+ * A rect on the sheet - the unrotated portrait frame that the layout and the
+ * printer work in - to widget coordinates. A landscape sheet is shown turned
+ * a quarter clockwise, so the sheet's top edge is on the right; pageRect()
+ * places pages the same way.
+ * ***********************************************/
+QRectF PreviewWidget::sheetToWidget(const QRectF &rect) const
+{
+    const qreal s = mScaleFactor;
+    QRectF res;
+    if (isLandscape(project->rotation()))
+    {
+        res.setSize(QSizeF(rect.height() * s, rect.width() * s));
+        res.moveRight(mDrawRect.right() - rect.top()  * s);
+        res.moveTop(  mDrawRect.top()   + rect.left() * s);
+    }
+    else
+    {
+        res.setSize(rect.size() * s);
+        res.moveLeft(mDrawRect.left() + rect.left() * s);
+        res.moveTop( mDrawRect.top()  + rect.top()  * s);
+    }
+    return res;
 }
 
 
@@ -493,10 +535,90 @@ void PreviewWidget::paintEvent(QPaintEvent *)
 
     // Draw current page rect ...................
     Sheet *sheet = project->currentSheet();
+
+    // Where the printer itself stops printing. Shown, never enforced: margins
+    // can still be set inside it, and anything beyond the line is cut off.
+    if (sheet && !project->printer()->hardwareMargins().isNull())
+    {
+        // The first and last spreads of a booklet show one page only.
+        QRectF visible = mDrawRect;
+        const QPointF mid = visible.center();
+        if (mHints.testFlag(Sheet::HintOnlyLeft))
+            isLandscape(rotation) ? visible.setRight(mid.x()) : visible.setBottom(mid.y());
+        if (mHints.testFlag(Sheet::HintOnlyRight))
+            isLandscape(rotation) ? visible.setLeft(mid.x()) : visible.setTop(mid.y());
+
+        painter.save();
+        painter.setBrush(Qt::NoBrush);
+
+        // Green where the pages fit within it, red where one is cut off.
+        const QRectF paper = project->printer()->paperRect();
+        auto drawLimit = [&](int printSheet, const QRectF &part, bool clipped)
+        {
+            QPen pen(clipped ? QColor(220, 40, 40) : QColor(30, 150, 60));
+            pen.setStyle(Qt::DashLine);
+            painter.setPen(pen);
+            painter.setClipRect(sheetToWidget(part).intersected(visible));
+            painter.drawRect(sheetToWidget(paper.marginsRemoved(
+                                               project->hardwareMargins(printSheet))));
+        };
+
+        if (project->layout()->id() == "Booklet")
+        {
+            // A reading spread is two halves of different printed sides, each
+            // of which may have gone through the printer the other way round,
+            // so each half gets its own side's limits. The halves meet at the
+            // fold, the middle of the gap between the pages. A half with no
+            // page is padding, left blank, and gets no line.
+            const qreal foldY = project->printer()->pageRect().center().y();
+            for (int i = 0; i < sheet->count(); ++i)
+            {
+                const ProjectPage *page = sheet->page(i);
+                if (!page)
+                    continue;
+
+                const QRectF cell = project->layout()->transformSpec(sheet, i, rotation).rect;
+                const QRectF part = (cell.center().y() < foldY)
+                        ? QRectF(paper.topLeft(), QPointF(paper.right(), foldY))
+                        : QRectF(QPointF(paper.left(), foldY), paper.bottomRight());
+                drawLimit(project->printSheetIndex(page), part,
+                          !project->pageOverflow(sheet, i).isNull());
+            }
+        }
+        else
+        {
+            // Other layouts preview the printed sheets themselves, whose
+            // pages all share one outline: red if any of them is cut off.
+            bool clipped = false;
+            for (int i = 0; i < sheet->count(); ++i)
+                clipped = clipped || !project->pageOverflow(sheet, i).isNull();
+            drawLimit(sheet->sheetNum(), paper, clipped);
+        }
+
+        painter.restore();
+    }
+
+    // Selected pages: what Delete would remove.
+    if (sheet)
+    {
+        painter.save();
+        QPen pen(QColor(30, 120, 220));
+        pen.setWidth(3);
+        painter.setPen(pen);
+        painter.setBrush(Qt::NoBrush);
+        for (int i = 0; i < sheet->count(); ++i)
+        {
+            const ProjectPage *page = sheet->page(i);
+            if (page && project->isSelected(page))
+                painter.drawRect(this->pageRect(i));
+        }
+        painter.restore();
+    }
+
     if (sheet)
     {
         ProjectPage *curPage = project->currentPage();
-        if (curPage)
+        if (curPage && !project->isSelected(curPage))
         {
             painter.save();
             QPen pen = painter.pen();
@@ -631,6 +753,10 @@ void PreviewWidget::keyPressEvent(QKeyEvent *event)
             project->setCurrentSheet(project->currentSheetNum() + 1);
             break;
 
+        case Qt::Key_Escape:
+            project->clearSelection();
+            break;
+
         }
     }
 }
@@ -658,18 +784,166 @@ void PreviewWidget::contextMenuEvent(QContextMenuEvent *event)
  ************************************************/
 void PreviewWidget::mousePressEvent(QMouseEvent *event)
 {
+    // A click is not a hover: start the wait over.
+    QToolTip::hideText();
+    mHoverPage = nullptr;
+    mHoverTimer->stop();
+
     Sheet *sheet = project->currentSheet();
 
     if (!sheet)
         return;
 
     int n = pageAt(event->pos());
-    if (n<0)
+    ProjectPage *page = n < 0 ? nullptr : sheet->page(n);
+
+    // Only the left button selects: a right-click opens the menu for the
+    // selection it was made on.
+    if (event->button() == Qt::LeftButton)
+    {
+        const Qt::KeyboardModifiers mods = event->modifiers();
+
+        if (!page)
+        {
+            // A click off the pages clears the selection, as in a file manager.
+            if (!(mods & (Qt::ControlModifier | Qt::ShiftModifier)))
+                project->clearSelection();
+            return;
+        }
+
+        if (mods & Qt::ShiftModifier)
+            project->selectPageRange(page, mods & Qt::ControlModifier);
+        else if (mods & Qt::ControlModifier)
+            project->togglePageSelection(page);
+        else
+            project->selectPage(page);
+    }
+
+    if (page)
+        project->setCurrentPage(page);
+}
+
+
+/************************************************
+ * Starts the hover wait whenever the pointer moves onto a different page.
+ ************************************************/
+void PreviewWidget::mouseMoveEvent(QMouseEvent *event)
+{
+    QFrame::mouseMoveEvent(event);
+
+    const Sheet *sheet = project->currentSheet();
+    const int n = sheet ? pageAt(event->pos()) : -1;
+    const ProjectPage *page = (n < 0) ? nullptr : sheet->page(n);
+
+    mHoverPos = event->pos();
+    if (page == mHoverPage)
         return;
 
-    ProjectPage *page = sheet->page(n);
+    mHoverPage = page;
+    QToolTip::hideText();
+    if (page)
+        mHoverTimer->start();
+    else
+        mHoverTimer->stop();
+}
+
+
+/************************************************
+
+ ************************************************/
+void PreviewWidget::leaveEvent(QEvent *event)
+{
+    QFrame::leaveEvent(event);
+    mHoverTimer->stop();
+    mHoverPage = nullptr;
+}
+
+
+/************************************************
+ * The page may have gone - deleted, or the sheet turned - while the timer
+ * ran, so it is looked up again under the pointer.
+ ************************************************/
+void PreviewWidget::showPageToolTip()
+{
+    const Sheet *sheet = project->currentSheet();
+    if (!sheet || !mHoverPage)
+        return;
+
+    const int n = pageAt(mHoverPos);
+    if (n < 0 || sheet->page(n) != mHoverPage)
+        return;
+
+    // Tied to the page's rect, so it goes away when the pointer leaves it.
+    QToolTip::showText(mapToGlobal(mHoverPos), pageToolTip(sheet, n), this,
+                       pageRect(n).toRect());
+}
+
+
+/************************************************
+
+ ************************************************/
+QString PreviewWidget::pageToolTip(const Sheet *sheet, int pageNumOnSheet)
+{
+    const ProjectPage *page = sheet->page(pageNumOnSheet);
     if (!page)
-        return;
+        return QString();
 
-    project->setCurrentPage(page);
+    const Unit unit = currentUnit();
+    auto size = [unit](const QSizeF &s)
+    {
+        return QString("%1 × %2 %3")
+                .arg(toUnit(s.width(),  unit), 0, 'f', unitDecimals(unit))
+                .arg(toUnit(s.height(), unit), 0, 'f', unitDecimals(unit))
+                .arg(unitSuffix(unit));
+    };
+
+    QStringList rows;
+    auto row = [&rows](const QString &name, const QString &value)
+    {
+        rows << QString("<tr><td style='padding-right: 12px'>%1</td><td>%2</td></tr>")
+                .arg(name.toHtmlEscaped(), value.toHtmlEscaped());
+    };
+
+    // Where it comes from.
+    const int jobNum = project->jobs()->indexOfProjectPage(page);
+    if (jobNum >= 0)
+    {
+        const Job job = project->jobs()->at(jobNum);
+        if (page->isBlankPage())
+            row(tr("Source"), tr("Blank page inserted in job %1, %2").arg(jobNum + 1).arg(job.title()));
+        else
+            row(tr("Source"), tr("Job %1, %2: page %3 of %4")
+                .arg(jobNum + 1).arg(job.title())
+                .arg(job.indexOfPage(page) + 1).arg(job.pageCount()));
+    }
+
+    // Its size, and what is left of it after trimming.
+    row(tr("Page size"), size(page->rect().size()));
+    if (project->trimWhitespace() && page->trimRect() != page->rect())
+        row(tr("Trimmed to"), size(page->trimRect().size()));
+
+    if (page->manualRotation() != NoRotate)
+        row(tr("Rotated"), tr("%1° by hand").arg(int(page->manualRotation())));
+
+    // Where it goes.
+    const int printSheet = project->printSheetIndex(page);
+    if (printSheet >= 0)
+        row(tr("Printed on"), project->sheetDescription(printSheet));
+
+    const TransformSpec spec = project->layout()->transformSpec(sheet, pageNumOnSheet, project->rotation());
+    row(tr("Scale"), QString("%1%").arg(spec.scale * 100, 0, 'f', 1));
+
+    // Against the printer's own limits, for the side it is printed on.
+    QString warning;
+    if (!project->pageOverflow(sheet, pageNumOnSheet).isNull())
+        warning = tr("Part of this page lies beyond the printer's limit (the red dashed "
+                     "line); anything printed there will be cut off.");
+
+    QString res = QString("<b>%1</b>").arg(tr("Page %1 of %2")
+                                          .arg(page->pageNum() + 1)
+                                          .arg(project->pageCount()));
+    res += "<table>" + rows.join("") + "</table>";
+    if (!warning.isEmpty())
+        res += QString("<p style='color: #c62828'>%1</p>").arg(warning.toHtmlEscaped());
+    return res;
 }

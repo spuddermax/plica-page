@@ -205,6 +205,33 @@ FoldLine strToFoldLine(const QString &str)
 
 
 /************************************************
+
+ ************************************************/
+QString stitchMarksToStr(StitchMarks value)
+{
+    switch (value)
+    {
+    case StitchMarksAllFaces:       return "AllFaces";
+    case StitchMarksInsideFaces:    return "InsideFaces";
+    case StitchMarksCenter:         return "Center";
+    }
+    return "";
+}
+
+
+/************************************************
+
+ ************************************************/
+StitchMarks strToStitchMarks(const QString &str)
+{
+    QString s = str.toUpper();
+    if (s == "INSIDEFACES") return StitchMarksInsideFaces;
+    if (s == "CENTER")      return StitchMarksCenter;
+    return StitchMarksAllFaces;
+}
+
+
+/************************************************
  * Points -> display unit.
  ************************************************/
 qreal toUnit(qreal value, Unit unit)

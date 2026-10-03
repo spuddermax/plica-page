@@ -64,4 +64,38 @@ DuplexPasses calcDuplexPasses(FlipType flip,
                               bool docReverseOrder,
                               bool sheetIsLandscape);
 
+
+
+/************************************************
+ * Whether a printed sheet goes through the printer turned 180 degrees
+ * relative to the layout's frame, so that the printer's top and bottom
+ * limits land on its bottom and top, and left and right swap.
+ *
+ * Every side is printed in the printer's own frame. Three things can turn
+ * content against it, and two turns cancel:
+ *  - the sheet's /Rotate, which CUPS resolves onto portrait paper as
+ *    Printer::pageTurnedOnPaper() describes;
+ *  - a manual double-sided job pre-rotates its first pass by a half turn when
+ *    calcDuplexPasses() says so;
+ *  - an automatic duplexer flipping on the long edge prints the back of each
+ *    sheet upside down in its paper path, so that it reads the right way up
+ *    once turned over; on the short edge it does not.
+ *
+ * @param sheetIndex      the sheet's place in Layout::fillSheets(); even
+ *                        indices are the first side of each piece of paper
+ * @param autoFlip        the edge an automatic duplexer is asked to flip on,
+ *                        i.e. Layout::flipType(profile.flipType())
+ * @param sheetRotation   Project::rotation(), every sheet's /Rotate before any
+ *                        pass rotation
+ ************************************************/
+bool sheetGoesThroughTurned(int sheetIndex, bool doubleSided,
+                            const PrinterProfile &profile, const Printer &printer,
+                            FlipType autoFlip, Rotation sheetRotation);
+
+/// Margins as seen from the far side of a half turn.
+inline QMarginsF turnMargins(const QMarginsF &m)
+{
+    return QMarginsF(m.right(), m.bottom(), m.left(), m.top());
+}
+
 #endif // DUPLEX_H

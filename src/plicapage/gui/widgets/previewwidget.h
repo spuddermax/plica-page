@@ -66,6 +66,7 @@ public:
     ~PreviewWidget();
     
     QRectF pageRect(int pageNum) const;
+    QRectF sheetToWidget(const QRectF &rect) const;
     int pageAt(const QPoint &point) const;
 
 public slots:
@@ -81,9 +82,12 @@ protected:
     void keyPressEvent(QKeyEvent *event);
     void contextMenuEvent(QContextMenuEvent *event);
     void mousePressEvent(QMouseEvent *event);
+    void mouseMoveEvent(QMouseEvent *event);
+    void leaveEvent(QEvent *event);
 
 private slots:
     void sheetImageReady(const QImage &image, int sheetNum);
+    void showPageToolTip();
 
 private:
     QImage mImage;
@@ -95,7 +99,13 @@ private:
     RenderCache *mRender;
     int mWheelDelta;
 
+    // Hovering a page for a while shows its details.
+    QTimer *mHoverTimer;
+    const ProjectPage *mHoverPage;
+    QPoint mHoverPos;
+
     void drawShadow(QPainter &painter, const QRectF &rect);
+    static QString pageToolTip(const Sheet *sheet, int pageNumOnSheet);
 };
 
 #endif // PREVIEWWIDGET_H

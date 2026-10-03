@@ -504,8 +504,9 @@ bool DuplexWizard::printPass(int pass)
 
     // doubleSided=false, so this goes out one-sided whatever the profile says -
     // the printer must not do any turning of its own during a calibration.
+    // The page order is kept, as it is for a real job's passes.
     return mPrinter->printFile(file, tr("PlicaPage calibration", "Print job name"),
-                               false, 1, false);
+                               false, 1, false, true);
 }
 
 

@@ -65,3 +65,39 @@ DuplexPasses calcDuplexPasses(FlipType flip,
 
     return res;
 }
+
+
+/************************************************
+
+ ************************************************/
+bool sheetGoesThroughTurned(int sheetIndex, bool doubleSided,
+                            const PrinterProfile &profile, const Printer &printer,
+                            FlipType autoFlip, Rotation sheetRotation)
+{
+    Rotation rotation = sheetRotation;
+    bool duplexerTurns = false;
+
+    if (doubleSided && sheetIndex >= 0)
+    {
+        const bool back = sheetIndex % 2;
+
+        if (profile.duplexType() == DuplexAuto)
+        {
+            duplexerTurns = back && autoFlip == FlipType::LongEdge;
+        }
+        else
+        {
+            // Manual: the passes MainWindow::print() makes. Only the first is
+            // ever rotated, and it is either the fronts or the backs.
+            const DuplexPasses passes = calcDuplexPasses(profile.manualFlipType(),
+                                                         profile.manualDuplexReversesOrder(),
+                                                         profile.reverseOrder(),
+                                                         isLandscape(sheetRotation));
+            const bool inFirstPass = (passes.pages1 == Project::OddPages) ? !back : back;
+            if (passes.rotate1 && inFirstPass)
+                rotation = rotation + Rotate180;
+        }
+    }
+
+    return printer.pageTurnedOnPaper(rotation) != duplexerTurns;
+}

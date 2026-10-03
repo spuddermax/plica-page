@@ -23,6 +23,138 @@ preserved; only the tags were dropped, and they remain in the `upstream` remote
 
 ---
 
+## 2026-10 — Paper sizes for applications, defined in the program
+
+The 5 x 8.25 in size was written into the PPD by hand. Sizes are now the user's
+to define: Preferences > Paper sizes for applications lists them (name, width,
+height in the chosen unit) and, on OK, rewrites every queue on the PlicaPage
+backend with the installed PPD plus those sizes, keeping each queue's default
+paper. Applications - LibreOffice's printer properties, the system print
+dialogs - then offer them by name once restarted.
+
+- `kernel/papersizes.{h,cpp}`: the list, kept in the settings
+  (`PaperSizes/User`, points) and starting with 5 x 8.25 in, so nothing the PPD
+  used to offer disappears; `ppdWithPaperSizes()` adds each size to PageSize,
+  PageRegion, ImageableArea (to the edge) and PaperDimension under a
+  `wNNNhNNN` keyword; `installPaperSizes()` hands the result to `lpadmin -P`,
+  which members of the lpadmin group may run without a password.
+- The shipped PPD no longer carries the 5 x 8.25 in size itself.
+- At start-up the program puts the sizes back on any queue that lacks them, so
+  a reinstalled queue gets them again without the dialog.
+- The build passes the installed PPD's path to the program as
+  `CUPS_PPD_TEMPLATE`.
+
+## 2026-10 — Does the whole job fit the printer?
+
+- The printable-area outline is coloured per page: green where the page lies
+  within the printer's reach on the side it is printed on, red where it does
+  not. A booklet spread colours each half by its own page; other layouts
+  colour the sheet red if any of its pages is cut off.
+- A bar above the preview reports on the whole job. Green when every page
+  fits; otherwise red, naming the pages cut off, the edge - top, bottom, left,
+  right, or for a booklet the outer edge and the spine, as the page is seen in
+  the preview - and by how much, and which margins to raise to what: the
+  printer's limit on each edge some page crosses, since margins at the limit
+  fit any page. `Project::pageOverflow()`, `clippedPages()`,
+  `hardwareLimit()` and `printableAreaReport()` hold the logic; the page
+  tooltip's warning uses the same check.
+- When pages are cut off the bar offers "Fit margins to printer"
+  (`Project::fitMarginsToPrinter()`): each margin some page crosses goes to the
+  printer's limit on that edge - the most of the paper it can reach - and the
+  profile is saved. Margins no page crosses are left as they are.
+
+## 2026-10 — Status bar counts pieces of paper
+
+The status bar mixed two meanings of "sheet": the total, "(N sheets)", counted
+pieces of paper, while "Sheet X of Y" counted the preview's steps - printed
+sides when double-sided, so 8 pages 1-up double-sided read "Sheet 4 of 8"
+beside "(4 sheets)", and reading spreads for a booklet, which are not printed
+sheets at all. Both now count paper. "Sheet X of Y" is the piece of paper the
+current page is printed on, found through the printed layout
+(`Project::printSheetIndex()`, `paperOf()`, `paperCount()`), and when printing
+double-sided it names the side: front or back, or for a booklet outside or
+inside. The page label no longer repeats the paper count beside it.
+
+Hovering a page in the preview for two seconds shows its details: where it
+comes from (job and page, or an inserted blank), its size and trimmed size in
+the chosen unit, any rotation by hand, the sheet and side it prints on, the
+scale it prints at, and a warning when it reaches past the printer's limit for
+that side. The sheet wording comes from `Project::sheetDescription()`, shared
+with the status bar.
+
+## 2026-10 — Landscape direction per printer, and page order in manual duplex
+
+Two faults found on a real 8-page booklet printed on an HP DeskJet 2700 with
+manual duplex.
+
+**The two sheets came out nested the wrong way round.** The HP's PPD has
+`*DefaultOutputOrder: Reverse` (a face-up tray), so CUPS reverses every job:
+right for a one-sided stack, but it reversed each pass of the manual duplex job
+too, and the outer sheet came out last, on top of the inner one. The pairing of
+fronts and backs survived because both passes were reversed alike. Manual
+double-sided passes, and the duplex wizard's, now go out with
+`-o outputorder=normal`, so the sheet order PlicaPage plans is the order printed.
+Existing calibrations stay valid: the wizard measures how the second pass meets
+the sheets relative to the first, which reversing both passes did not change.
+
+**The printer's limits fell on the wrong edges of landscape sheets.** CUPS turns
+a landscape page onto portrait paper in the direction the PPD's
+`*LandscapeOrientation` gives - measured through the real filter chain: with
+`Plus90` (the Brother) a `/Rotate 90` page lands the right way up and 270 upside
+down; with `Minus90` (the HP, and libcups's default when the PPD is silent) the
+other way about. PlicaPage assumed `Plus90` everywhere. `PpdOptions` now reads
+it, `Printer::pageTurnedOnPaper()` applies it, and both the printable-area
+outline (through `sheetGoesThroughTurned()`, which now composes the sheet's
+`/Rotate`, any manual pre-rotation and the duplexer) and the print offset use
+it. The print offset was negated for the wrong landscape sheets on `Minus90`
+printers. The Margins tab now states the limits in the frame the margins are
+entered in.
+
+## 2026-10 — Show where the printer stops printing
+
+Margins could be set inside the area the printer can reach without any sign
+that the edge would be cut off. Nothing is enforced now either - some printers
+reach further than their driver admits - but the limit is shown:
+
+- `Printer::hardwareMargins()` reads the PPD's imageable area for the profile's
+  paper size (the queue default when it names none), in the sheet's portrait
+  frame; `printableRect()` is the paper less those margins.
+- The preview outlines that area in a red dashed line, through
+  `PreviewWidget::sheetToWidget()`, which maps the sheet frame to the screen the
+  same way `pageRect()` places pages. On the half-sheets that open and close a
+  booklet it is clipped to the half shown.
+- Double-sided printing can send a side through the printer turned round, and
+  its limits then fall on the opposite edges: the backs of an automatic
+  long-edge duplex, and the first pass of a manual job that
+  `calcDuplexPasses()` pre-rotates. `sheetGoesThroughTurned()` (duplex.cpp)
+  decides it from the same settings printing uses, and
+  `Project::hardwareMargins(sheet)` turns the limits for those sheets. The
+  preview shows reading spreads, whose two halves come from different printed
+  sides, so the project maps each page to its printed sheet and each half of a
+  booklet spread gets the limits of its own side.
+- The Margins tab states the four limits in the current unit and names any
+  margin set inside them - inside either orientation, when some sides go
+  through turned.
+
+## 2026-10 — Select several pages and delete them together
+
+Pages could only be deleted one at a time, or from one page to the end of its
+job. The preview now selects pages the way a file manager does: a click selects
+one page, Ctrl+click adds or removes one, and Shift+click selects the run from
+the last page clicked, across sheets; Ctrl+Shift+click adds the run instead.
+Selected pages are outlined in blue. Delete, or "Delete N selected pages" in the
+page menus, removes them in one step (`Project::deletePages()`), and Escape or a
+click off the pages clears the selection. The selection lives in the project and
+is pruned on every update, so it never outlives a deleted page or job.
+
+## 2026-10 — Undo every page deletion at once
+
+Deleted pages could only be brought back one at a time, from a submenu with
+an entry per page. Both undo-delete submenus now start with an item that
+restores them all: "All deleted pages" in the page menu, across every job,
+and "All deleted pages in this job" in the job menu. `Project::undoDeletePages()`
+shows them with a single re-layout and makes the first restored page current.
+
 ## 2026-10 — Fold line for booklets
 
 Boomaga marked the fold of a booklet only in the on-screen preview, as a guide
@@ -39,8 +171,19 @@ overlay that never reached the paper.
   so it follows the Internal margin and any unequal outer margins, and runs the
   full width of the paper. Stitch marks spread out from the centre of the fold
   and stop where the pages end.
-- Drawn on both faces of every booklet sheet, and never on the preview sheet
-  that joins two sub-booklets, which has no fold.
+- The line is drawn on both faces of every booklet sheet, and never on the
+  preview sheet that joins two sub-booklets, which has no fold. Stitch marks can
+  go on all faces, only the inside of each folded sheet (the stitch side), or
+  only the centre spread of each booklet, where the stitches pass through every
+  sheet (`Project/StitchMarks`). With all faces or the stitch side, faces
+  without marks keep the dotted line; with the centre only, no other face
+  gets a line at all. The
+  layout tags printed sheets with new `HintInsideFace` and `HintCenterSpread`
+  hints to tell them apart. A reading spread in the preview holds one page from
+  an inside face and one from an outside face, so the preview shows "stitch
+  side" marks on every spread; only the centre spread is exact there.
+- The line and its marks are drawn in a colour the user picks (default 60%
+  gray, `Project/FoldLineColor`), set once as the stroke colour for both.
 
 ## 2026-10 — Source page margins from the print dialog
 

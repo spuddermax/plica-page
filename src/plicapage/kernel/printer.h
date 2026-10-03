@@ -36,6 +36,7 @@
 #include <QPrinterInfo>
 #include <QExplicitlySharedDataPointer>
 #include <QIODevice>
+#include <QMarginsF>
 
 class Sheet;
 
@@ -216,6 +217,29 @@ public:
     QRectF paperRect(Unit unit=UnitPoint) const;
     QRectF pageRect(Unit unit=UnitPoint) const;
 
+    /**
+     * How close to each edge the printer itself can print, in points, on the
+     * paper the profile uses: the PPD's imageable area for that size. Measured
+     * on the sheet held portrait, the same frame as paperRect(). All zero for
+     * a printer without a PPD.
+     */
+    QMarginsF hardwareMargins(const PrinterProfile &profile) const;
+    QMarginsF hardwareMargins() const { return hardwareMargins(*mCurrentProfile); }
+
+    /**
+     * Whether a page sent with this /Rotate reaches the paper upside down
+     * relative to its own unrotated frame. CUPS turns a landscape page onto
+     * portrait paper in the direction the PPD's *LandscapeOrientation gives:
+     * with Plus90 a /Rotate 90 page lands the right way up and 270 upside
+     * down; with Minus90 - also the default - the other way about. 0 never
+     * turns, 180 always does.
+     */
+    bool pageTurnedOnPaper(Rotation rotation) const;
+    bool landscapeMinus90() const { return mLandscape < 0; }
+
+    /// paperRect() less hardwareMargins(): the area the printer can reach.
+    QRectF printableRect() const { return paperRect().marginsRemoved(hardwareMargins()); }
+
     qreal leftMargin(Unit unit=UnitPoint) const { return mCurrentProfile->leftMargin(unit); }
     void setLeftMargin(qreal value, Unit unit)  { mCurrentProfile->setLeftMargin(value, unit); }
 
@@ -273,7 +297,11 @@ public:
      * Passing doubleSided=false forces "sides=one-sided" whatever the profile
      * says, which is what the duplex calibration prints need.
      */
-    bool printFile(const QString &fileName, const QString &jobName, bool doubleSided, int numCopies, bool collate) const;
+    /// keepPageOrder sends the pages in exactly the order given, overriding
+    /// a queue that reverses them (*DefaultOutputOrder: Reverse); manual
+    /// double-sided passes depend on it.
+    bool printFile(const QString &fileName, const QString &jobName, bool doubleSided, int numCopies, bool collate,
+                   bool keepPageOrder = false) const;
 
     QString deviceUri() const { return mDeviceUri; }
 
@@ -293,6 +321,7 @@ private:
     QVector<PrinterProfile> mProfiles;
     QList<PpdPaperSize> mPaperSizes;
     QString mDefaultPaperSizeName;
+    int mLandscape;
     int mCurrentProfileIndex;
     PrinterProfile *mCurrentProfile;
     PrinterProfile mDefaultCupsProfile;

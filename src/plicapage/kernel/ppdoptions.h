@@ -77,9 +77,14 @@ public:
     const QList<PpdPaperSize> &paperSizes() const { return mPaperSizes; }
     QString defaultPaperSize() const { return mDefaultPaperSize; }
 
+    /// The PPD's *LandscapeOrientation as libcups reads it: 90 for Plus90,
+    /// -90 for Minus90 - which is also what it assumes when the PPD is silent.
+    int landscapeOrientation() const { return mLandscape; }
+
 private:
     QList<PpdPaperSize> mPaperSizes;
     QString mDefaultPaperSize;
+    int mLandscape;
     bool mValid;
     QList<PpdOption> mOptions;
     QString mQualityKeyword;

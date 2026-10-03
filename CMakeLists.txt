@@ -142,6 +142,10 @@ setByDefault(CUPS_BACKEND_DIR   "${DEF_CUPS_BACKEND_DIR}")
 setByDefault(CUPS_PPD_DIR       "${DEF_CUPS_PPD_DIR}")
 setByDefault(DBUS_SERVICE_DIR   "${DEF_DBUS_SERVICE_DIR}")
 
+# The queue's PPD as installed, which the program extends with the user's own
+# paper sizes when it rewrites the queue.
+add_definitions(-DCUPS_PPD_TEMPLATE=\"${CUPS_PPD_DIR}/${APP_NAME}.ppd\")
+
 
 status_message(" ")
 status_message("You can change the following directories using cmake options like:")

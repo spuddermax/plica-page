@@ -62,6 +62,10 @@ hand an existing queue the current PPD:
 
     sudo lpadmin -p PlicaPage -m lsb/usr/plicapage/plicapage.ppd
 
+That gives the queue the plain PPD. The paper sizes defined in PlicaPage
+(Preferences > Paper sizes for applications) are added back the next time
+PlicaPage starts.
+
 
 Installing next to Boomaga
 --------------------------

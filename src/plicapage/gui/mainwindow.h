@@ -61,6 +61,8 @@ private slots:
     void trimPaddingChanged();
     void foldLineChanged();
     void stitchSpacingChanged();
+    void stitchMarksChanged();
+    void chooseFoldLineColor();
 
     bool print(uint count = 1, bool collate = true);
     void printAndClose(uint count = 1, bool collate = true);
@@ -79,7 +81,13 @@ private slots:
     void showEditPageMainMenu();
     void showEditJobMainMenu();
     void deletePage();
+    void deleteSelectedPages();
+    void showPaperSizesDialog();
+    void fitMarginsToPrinter();
+    void syncPaperSizes();
     void undoDeletePage();
+    void undoDeleteAllPages();
+    void undoDeleteJobPages();
     void deletePagesEnd();
     void insertBlankPageBefore();
     void insertBlankPageAfter();
@@ -121,6 +129,7 @@ private:
     QLabel mStatusBarCurrentSheetLabel;
 
     QProgressBar mProgressBar;
+    QAction     *mDeleteSelectedAct;
     QString      mSaveFile;
 
     void fillPrintersCombo();
@@ -128,6 +137,7 @@ private:
     void initStatusBar();
     void updateTrimWidgets();
     void updateFoldLineWidgets();
+    void updateMarginNotice();
 
     void loadSettings();
     void saveSettings();

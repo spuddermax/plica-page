@@ -65,6 +65,7 @@ QString PpdOption::defaultText() const
 
  ************************************************/
 PpdOptions::PpdOptions(const QString &printerName):
+    mLandscape(-90),
     mValid(false)
 {
     // The returned filename is stored in a static buffer
@@ -152,6 +153,7 @@ PpdOptions::PpdOptions(const QString &printerName):
 
     ppdClose(ppd);
     QFile::remove(ppdFile);
+    mLandscape = ppd->landscape;
     mValid = true;
 
     for (int i = 0; qualityOptions[i] && mQualityKeyword.isEmpty(); ++i)

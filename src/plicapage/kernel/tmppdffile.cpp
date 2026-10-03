@@ -28,6 +28,7 @@
 #include <QDir>
 #include <cmath>
 #include <QtMath>
+#include <QColor>
 #include <QDateTime>
 
 #include "sheet.h"
@@ -560,22 +561,16 @@ void TmpPdfFile::getPageStream(QString *out, const Sheet *sheet) const
     // The print offset is measured on the physical sheet, held portrait as it
     // leaves the printer. This stream is drawn in the unrotated page frame, and
     // two rotations sit between the two: the page's own /Rotate, and CUPS
-    // turning a landscape page back onto portrait paper. Sent through the real
-    // filter chain, they combine like this:
-    //
-    //     /Rotate 0   -> content axes match the sheet
-    //     /Rotate 90  -> match too: CUPS's turn undoes the page's exactly
-    //     /Rotate 180 -> content is upside down on the sheet
-    //     /Rotate 270 -> upside down too
-    //
-    // So the shift is never turned by a quarter, only kept or negated. Turning
-    // it with /Rotate, as this once did, put a landscape job's vertical
-    // correction on the horizontal axis.
+    // turning a landscape page back onto portrait paper. Together they never
+    // turn the content by a quarter, only leave it as it is or turn it upside
+    // down - which of the two depends on the printer's PPD, see
+    // Printer::pageTurnedOnPaper(). So the shift is only kept or negated.
+    // Turning it with /Rotate, as this once did, put a landscape job's
+    // vertical correction on the horizontal axis.
     {
         const double dx = printer->printOffsetX();
         const double dy = printer->printOffsetY();
-        const int rot = ((int)sheet->rotation() % 360 + 360) % 360;
-        const double sign = (rot == 180 || rot == 270) ? -1.0 : 1.0;
+        const double sign = printer->pageTurnedOnPaper(sheet->rotation()) ? -1.0 : 1.0;
         *out += QString("q\n1 0 0 1 %1 %2 cm\n")
                 .arg(sign * dx, 0, 'f', 3)
                 .arg(sign * dy, 0, 'f', 3);
@@ -678,11 +673,33 @@ void TmpPdfFile::getPageStream(QString *out, const Sheet *sheet) const
     if (sheet->hints().testFlag(Sheet::HintDrawFold) &&
         !sheet->hints().testFlag(Sheet::HintSubBooklet))
     {
-        *out += foldLineStream(project->foldLine(), project->stitchSpacing(),
+        // A side without marks keeps the dotted line - except with the marks
+        // at the centre only, where the centre spread is the one side to
+        // carry any line at all.
+        FoldLine style = project->foldLine();
+        if (style == FoldLineStitched && !hasStitchMarks(sheet, project->stitchMarks()))
+            style = (project->stitchMarks() == StitchMarksCenter) ? FoldLineNone : FoldLineDotted;
+
+        *out += foldLineStream(style, project->stitchSpacing(), project->foldLineColor(),
                                printer->paperRect(), printer->pageRect());
     }
 
     *out += "Q\n";   // the print offset
+}
+
+
+/************************************************
+ * Whether a booklet sheet's fold gets cross marks, or only the dotted line.
+ ************************************************/
+bool TmpPdfFile::hasStitchMarks(const Sheet *sheet, StitchMarks marks)
+{
+    switch (marks)
+    {
+    case StitchMarksAllFaces:       return true;
+    case StitchMarksInsideFaces:    return sheet->hints().testFlag(Sheet::HintInsideFace);
+    case StitchMarksCenter:         return sheet->hints().testFlag(Sheet::HintCenterSpread);
+    }
+    return true;
 }
 
 
@@ -698,7 +715,7 @@ void TmpPdfFile::getPageStream(QString *out, const Sheet *sheet) const
  * out from its centre so the pattern is symmetric and always has a middle
  * stitch.
  ************************************************/
-QString TmpPdfFile::foldLineStream(FoldLine style, qreal stitchSpacing,
+QString TmpPdfFile::foldLineStream(FoldLine style, qreal stitchSpacing, const QColor &color,
                                    const QRectF &paperRect, const QRectF &pageRect)
 {
     if (style == FoldLineNone)
@@ -707,7 +724,11 @@ QString TmpPdfFile::foldLineStream(FoldLine style, qreal stitchSpacing,
     // PDF's origin is bottom left, the layout's top left.
     const qreal y = paperRect.height() - pageRect.center().y();
 
-    QString res = "q\n0.6 G\n";
+    // One stroke colour for the line and the marks.
+    QString res = QString("q\n%1 %2 %3 RG\n")
+            .arg(color.redF(),   0, 'f', 3)
+            .arg(color.greenF(), 0, 'f', 3)
+            .arg(color.blueF(),  0, 'f', 3);
 
     if (style == FoldLineSolid)
         res += "0.5 w\n[] 0 d\n";
@@ -725,7 +746,7 @@ QString TmpPdfFile::foldLineStream(FoldLine style, qreal stitchSpacing,
         const qreal center = pageRect.center().x();
         const int count = qFloor(pageRect.width() / 2 / stitchSpacing + 1e-6);
 
-        res += "0.4 G\n0.75 w\n0 J\n[] 0 d\n";
+        res += "0.75 w\n0 J\n[] 0 d\n";
         for (int i = -count; i <= count; ++i)
         {
             const qreal x = center + i * stitchSpacing;

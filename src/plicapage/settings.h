@@ -57,6 +57,8 @@ public:
 
         FoldLine,
         StitchSpacing,
+        StitchMarks,
+        FoldLineColor,
 
         // Preferences **************************
         Preferences_Geometry,

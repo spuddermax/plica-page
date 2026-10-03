@@ -51,6 +51,8 @@ set(HEADERS
     kernel/printer.h
     kernel/cupsprinteroptions.h
     kernel/ppdoptions.h
+    kernel/papersizes.h
+    gui/papersizes/papersizesdialog.h
     kernel/pdfprocessor.h
     kernel/pagetrimmer.h
     kernel/duplex.h
@@ -107,6 +109,8 @@ set(SOURCES
     kernel/projectpage.cpp
     kernel/cupsprinteroptions.cpp
     kernel/ppdoptions.cpp
+    kernel/papersizes.cpp
+    gui/papersizes/papersizesdialog.cpp
     kernel/printer.cpp
     kernel/pdfprocessor.cpp
     kernel/pagetrimmer.cpp

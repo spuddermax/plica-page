@@ -38,6 +38,9 @@
 #include <QMessageBox>
 #include "settings.h"
 #include "gui/duplexwizard/duplexwizard.h"
+#include "kernel/duplex.h"
+#include "kernel/project.h"
+#include "kernel/layout.h"
 
 
 class ProfileItem: public QStandardItem
@@ -864,4 +867,78 @@ void PrinterSettings::updatePreview()
     }
 
     ui->marginsPereview->setPixmap(QPixmap::fromImage(img));
+    updateHardwareMarginsNote();
+}
+
+
+/************************************************
+ * States how close to each edge the printer can print, and which of the
+ * margins being entered fall inside that. Margins are not limited to it:
+ * some printers reach further than their driver admits.
+ ************************************************/
+void PrinterSettings::updateHardwareMarginsNote()
+{
+    const PrinterProfile *profile = currentProfile();
+    const QMarginsF hw = (mPrinter && profile) ? mPrinter->hardwareMargins(*profile)
+                                               : QMarginsF();
+    ui->hardwareMarginsLbl->setVisible(!hw.isNull());
+    if (hw.isNull())
+        return;
+
+    auto fmt = [this](qreal points)
+    {
+        return QString("%1 %2").arg(toUnit(points, mUnit), 0, 'f', unitDecimals(mUnit))
+                               .arg(unitSuffix(mUnit));
+    };
+
+    // The margins here are measured on the sheet as PlicaPage lays it out.
+    // A side that reaches the paper turned round - see
+    // sheetGoesThroughTurned() - has the printer's limits at the opposite
+    // ends of that frame; when the two sides of a sheet go through opposite
+    // ways round, each margin has to clear the larger of the two.
+    bool turned[2];
+    for (int sheet = 0; sheet < 2; ++sheet)
+        turned[sheet] = sheetGoesThroughTurned(sheet, project->doubleSided(), *profile, *mPrinter,
+                                               project->layout()->flipType(profile->flipType()),
+                                               project->rotation());
+
+    QMarginsF limit = turned[0] ? turnMargins(hw) : hw;
+    if (turned[0] != turned[1])
+    {
+        const QMarginsF t = turnMargins(hw);
+        limit = QMarginsF(qMax(hw.left(), t.left()),   qMax(hw.top(), t.top()),
+                          qMax(hw.right(), t.right()), qMax(hw.bottom(), t.bottom()));
+    }
+
+    QString text = tr("For this layout, the printer can't print closer to the edge than "
+                      "top %1, bottom %2, left %3, right %4. "
+                      "The preview shows the limit as a red dashed line.")
+            .arg(fmt(limit.top()), fmt(limit.bottom()), fmt(limit.left()), fmt(limit.right()));
+
+    if (turned[0] != turned[1])
+        text += " " + tr("Printing double-sided as set, the two sides of each sheet go through "
+                         "the printer opposite ways round, so each edge has to clear the larger "
+                         "of the printer's two limits.");
+
+    // A twentieth of a point of slack, so a margin entered as the limit,
+    // rounded in the display unit, is not reported as inside it.
+    const qreal slack = 0.05;
+    QStringList inside;
+    if (fromUnit(ui->topMarginSpin->value(),    mUnit) < limit.top()    - slack) inside << tr("top");
+    if (fromUnit(ui->bottomMarginSpin->value(), mUnit) < limit.bottom() - slack) inside << tr("bottom");
+    if (fromUnit(ui->leftMarginSpin->value(),   mUnit) < limit.left()   - slack) inside << tr("left");
+    if (fromUnit(ui->rightMarginSpin->value(),  mUnit) < limit.right()  - slack) inside << tr("right");
+
+    if (!inside.isEmpty())
+    {
+        const QString warning = inside.count() == 1
+                ? tr("The %1 margin is inside this limit, so anything printed there will be cut off.",
+                     "%1 is one of top, bottom, left, right")
+                : tr("The %1 margins are inside this limit, so anything printed there will be cut off.",
+                     "%1 is a list of top, bottom, left, right")
+                  ;
+        text += "<br><font color='#c62828'>" + warning.arg(inside.join(", ")) + "</font>";
+    }
+
+    ui->hardwareMarginsLbl->setText(text);
 }

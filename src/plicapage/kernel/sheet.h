@@ -43,7 +43,9 @@ public:
         HintOnlyLeft    = 1,
         HintOnlyRight   = 2,
         HintDrawFold    = 4,
-        HintSubBooklet  = 8
+        HintSubBooklet  = 8,
+        HintInsideFace  = 16,   // the inside of a folded booklet sheet
+        HintCenterSpread= 32    // the middle of a booklet, where it is stitched
     };
 
     Q_DECLARE_FLAGS(Hints, Hint)
