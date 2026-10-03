@@ -74,6 +74,7 @@ private slots:
     void profileRenamed(QWidget * editor);
     void resetToDefault();
     void printCenteringPage();
+    void printDuplexCenteringPage();
 
 private:
     Ui::PrinterSettings *ui;

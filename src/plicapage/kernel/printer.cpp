@@ -760,7 +760,7 @@ bool Printer::print(const QList<Sheet *> &sheets, const QString &jobName, bool d
  * to the printer the same way a real job does.
  ************************************************/
 bool Printer::printFile(const QString &fileName, const QString &jobName, bool doubleSided, int numCopies, bool collate,
-                        bool keepPageOrder) const
+                        bool keepPageOrder, bool profileFlip) const
 {
     QStringList args;
     args << "-P" << name();                       // Prints files to the named printer.
@@ -778,7 +778,8 @@ bool Printer::printFile(const QString &fileName, const QString &jobName, bool do
     // Duplex options ...........................
     if (duplexType() == DuplexAuto && doubleSided)
     {
-        if (project->layout()->flipType(flipType()) == FlipType::LongEdge)
+        const FlipType flip = profileFlip ? flipType() : project->layout()->flipType(flipType());
+        if (flip == FlipType::LongEdge)
             args << "-o sides=two-sided-long-edge";
         else
             args << "-o sides=two-sided-short-edge";

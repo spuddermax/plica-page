@@ -36,6 +36,7 @@
 #include <QRectF>
 #include <QPolygonF>
 #include <QStringList>
+#include <QScopedPointer>
 
 
 /************************************************
@@ -160,33 +161,25 @@ QString writeCalibrationPdf(const Printer *printer, int pass)
  * sheet edge. Measuring where the marks really land tells the user how far the
  * printer is off, and in which direction.
  ************************************************/
-QString writeCenteringPdf(const Printer *printer, qreal offsetX, qreal offsetY)
+static void drawCenteringPage(QPainter &painter, const QSizeF &paper, qreal offsetX, qreal offsetY,
+                              bool turn, const QString &side, const QStringList &extra)
 {
-    if (!printer)
-        return QString();
+    painter.save();
 
-    const QString fileName = genTmpFileName("-centering.pdf");
-    const QSizeF paper = printer->paperSize(UnitPoint);
-    if (paper.isEmpty())
-        return QString();
-
-    QPdfWriter pdf(fileName);
-    pdf.setCreator("PlicaPage");
-    pdf.setTitle(QObject::tr("Centering test page", "Title of the printed centering test document"));
-    pdf.setResolution(72);
-    pdf.setPageSize(QPageSize(paper, QPageSize::Point, QString(), QPageSize::ExactMatch));
-    pdf.setPageMargins(QMarginsF(0, 0, 0, 0), QPageLayout::Point);
-
-    QPainter painter;
-    if (!painter.begin(&pdf))
-        return QString();
-
-    // QPainter's y runs down the page; the offset's runs up.
+    // QPainter's y runs down the page; the offset's runs up. The shift is on
+    // the paper, so it comes before any turn of the drawing.
     painter.translate(offsetX, -offsetY);
 
     const qreal mm = 72.0 / 25.4;
     const qreal w = paper.width(), h = paper.height();
     const QPointF c(w / 2, h / 2);
+
+    if (turn)
+    {
+        painter.translate(c);
+        painter.rotate(180);
+        painter.translate(-c);
+    }
 
     painter.setPen(QPen(Qt::black, 0.5));
     painter.drawLine(QPointF(c.x() - 40, c.y()), QPointF(c.x() + 40, c.y()));
@@ -223,6 +216,12 @@ QString writeCenteringPdf(const Printer *printer, qreal offsetX, qreal offsetY)
     painter.drawLine(QPointF(c.x(), 2 * mm), QPointF(c.x(), 30 * mm));
     painter.drawLine(QPointF(c.x(), h - 30 * mm), QPointF(c.x(), h - 2 * mm));
 
+    if (!side.isEmpty())
+    {
+        QFont big; big.setPointSizeF(28); big.setBold(true); painter.setFont(big);
+        painter.drawText(QRectF(0, c.y() + 60, w, 40), Qt::AlignHCenter | Qt::AlignTop, side);
+    }
+
     QFont text; text.setPointSizeF(9); painter.setFont(text);
     const QStringList lines = QStringList()
         << QObject::tr("PlicaPage centering test page", "Caption on the centering test sheet")
@@ -230,9 +229,92 @@ QString writeCenteringPdf(const Printer *printer, qreal offsetX, qreal offsetY)
         << QObject::tr("Measure the real distance from the paper edge to the 10 mm mark on all four sides.")
         << QObject::tr("Horizontal offset = (right - left) / 2.   Vertical offset = (top - bottom) / 2.")
         << QObject::tr("Enter them under Margins > Print offset, then print this page again: all four should read 10.")
+        << extra
         << QObject::tr("Printed with offset X %1 pt, Y %2 pt.").arg(offsetX, 0, 'f', 1).arg(offsetY, 0, 'f', 1);
-    qreal y = 60;
+    // Below the top ruler, which reaches 30 mm in from the edge.
+    qreal y = 30 * mm + 20;
     foreach (const QString &l, lines) { painter.drawText(QPointF(40, y), l); y += 13; }
+
+    painter.restore();
+}
+
+
+/************************************************
+
+ ************************************************/
+static QPdfWriter *centeringWriter(const QString &fileName, const QSizeF &paper)
+{
+    QPdfWriter *pdf = new QPdfWriter(fileName);
+    pdf->setCreator("PlicaPage");
+    pdf->setTitle(QObject::tr("Centering test page", "Title of the printed centering test document"));
+    pdf->setResolution(72);
+    pdf->setPageSize(QPageSize(paper, QPageSize::Point, QString(), QPageSize::ExactMatch));
+    pdf->setPageMargins(QMarginsF(0, 0, 0, 0), QPageLayout::Point);
+    return pdf;
+}
+
+
+/************************************************
+
+ ************************************************/
+QString writeCenteringPdf(const Printer *printer, qreal offsetX, qreal offsetY)
+{
+    if (!printer)
+        return QString();
+
+    const QString fileName = genTmpFileName("-centering.pdf");
+    const QSizeF paper = printer->paperSize(UnitPoint);
+    if (paper.isEmpty())
+        return QString();
+
+    QScopedPointer<QPdfWriter> pdf(centeringWriter(fileName, paper));
+    QPainter painter;
+    if (!painter.begin(pdf.data()))
+        return QString();
+
+    drawCenteringPage(painter, paper, offsetX, offsetY, false, QString(), QStringList());
+    painter.end();
+    return fileName;
+}
+
+
+/************************************************
+ * The two sides are checked against each other by holding the sheet up to the
+ * light: the crosshairs, both at the exact center as the PDF defines it,
+ * show at once whether the back lands where the front does.
+ ************************************************/
+QString writeDuplexCenteringPdf(const Printer *printer, qreal offsetX, qreal offsetY,
+                                const QList<CenteringSide> &sides)
+{
+    if (!printer || sides.isEmpty())
+        return QString();
+
+    const QString fileName = genTmpFileName("-duplex-centering.pdf");
+    const QSizeF paper = printer->paperSize(UnitPoint);
+    if (paper.isEmpty())
+        return QString();
+
+    QScopedPointer<QPdfWriter> pdf(centeringWriter(fileName, paper));
+    QPainter painter;
+    if (!painter.begin(pdf.data()))
+        return QString();
+
+    const QStringList extra = QStringList()
+        << QObject::tr("Double-sided: measure each side the same way.")
+        << QObject::tr("Then hold the sheet up to a light: the two center crosses should sit on top of each other.");
+
+    for (int i = 0; i < sides.count(); ++i)
+    {
+        if (i > 0)
+            pdf->newPage();
+
+        const CenteringSide &s = sides.at(i);
+        const qreal sign = s.negateOffset ? -1.0 : 1.0;
+        drawCenteringPage(painter, paper, sign * offsetX, sign * offsetY, s.turnDrawing,
+                          s.back ? QObject::tr("BACK",  "Duplex centering test side")
+                                 : QObject::tr("FRONT", "Duplex centering test side"),
+                          extra);
+    }
 
     painter.end();
     return fileName;

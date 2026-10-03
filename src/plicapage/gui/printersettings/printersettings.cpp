@@ -217,6 +217,9 @@ PrinterSettings::PrinterSettings(QWidget *parent) :
     connect(ui->offsetYSpin, SIGNAL(editingFinished()),
             this, SLOT(updateProfile()));
 
+    connect(ui->duplexCenteringButton, SIGNAL(clicked()),
+            this, SLOT(printDuplexCenteringPage()));
+
     connect(ui->centeringButton, SIGNAL(clicked()),
             this, SLOT(printCenteringPage()));
 
@@ -596,6 +599,69 @@ void PrinterSettings::printCenteringPage()
     const QString file = writeCenteringPdf(mPrinter, profile->printOffsetX(), profile->printOffsetY());
     if (!file.isEmpty())
         mPrinter->printFile(file, tr("PlicaPage centering test", "Print job name"), false, 1, false);
+}
+
+
+/************************************************
+ * The same page on both sides of one sheet, sent the way a real double-sided
+ * job is: one two-sided job for a duplexer, or two passes with the stack
+ * turned by hand in between, the first pre-rotated when a real job's would
+ * be.
+ ************************************************/
+void PrinterSettings::printDuplexCenteringPage()
+{
+    updateProfile();
+    PrinterProfile *profile = currentProfile();
+    if (!profile || !mPrinter)
+        return;
+    applyUpdates();
+
+    const qreal ox = profile->printOffsetX();
+    const qreal oy = profile->printOffsetY();
+    const QString jobName = tr("PlicaPage duplex centering test", "Print job name");
+
+    if (profile->duplexType() == DuplexAuto)
+    {
+        // A duplexer flipping on the long edge puts the back through turned
+        // round (see sheetGoesThroughTurned()), so its shift is reversed to
+        // land the same way on the paper.
+        const bool backTurned = profile->flipType() == FlipType::LongEdge;
+        const QString file = writeDuplexCenteringPdf(mPrinter, ox, oy, QList<CenteringSide>()
+                                                     << CenteringSide{false, false, false}
+                                                     << CenteringSide{true,  false, backTurned});
+        if (!file.isEmpty())
+            mPrinter->printFile(file, jobName, true, 1, false, false, true);
+        return;
+    }
+
+    // Manual: the passes MainWindow::print() would make for one portrait
+    // sheet, the front first.
+    const DuplexPasses passes = calcDuplexPasses(profile->manualFlipType(),
+                                                 profile->manualDuplexReversesOrder(),
+                                                 false, false);
+
+    const QString front = writeDuplexCenteringPdf(mPrinter, ox, oy, QList<CenteringSide>()
+                                                  << CenteringSide{false, passes.rotate1, false});
+    if (front.isEmpty() || !mPrinter->printFile(front, jobName, false, 1, false, true))
+        return;
+
+    QMessageBox dialog(this);
+    dialog.setWindowTitle(windowTitle());
+    dialog.setIconPixmap(QPixmap(":/48/print"));
+    dialog.setText(tr("%1\n\n%2\n\nThen press Continue to print the back.",
+                      "Duplex centering test. %1 is how to turn the sheet over, %2 the reminder to reload the tray")
+                   .arg(manualDuplexInstruction(mPrinter->manualDuplexHandling()),
+                        manualDuplexReinsertHint()));
+    dialog.addButton(QMessageBox::Cancel);
+    QPushButton *btn = dialog.addButton(QMessageBox::Ok);
+    btn->setText(tr("Continue", "Duplex centering test button"));
+    if (dialog.exec() != QMessageBox::Ok)
+        return;
+
+    const QString back = writeDuplexCenteringPdf(mPrinter, ox, oy, QList<CenteringSide>()
+                                                 << CenteringSide{true, false, false});
+    if (!back.isEmpty())
+        mPrinter->printFile(back, jobName, false, 1, false, true);
 }
 
 

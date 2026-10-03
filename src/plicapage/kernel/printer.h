@@ -299,9 +299,11 @@ public:
      */
     /// keepPageOrder sends the pages in exactly the order given, overriding
     /// a queue that reverses them (*DefaultOutputOrder: Reverse); manual
-    /// double-sided passes depend on it.
+    /// double-sided passes depend on it. profileFlip has an automatic
+    /// duplexer flip on the profile's own edge rather than the one the
+    /// project's layout asks for - for a file that is not the project.
     bool printFile(const QString &fileName, const QString &jobName, bool doubleSided, int numCopies, bool collate,
-                   bool keepPageOrder = false) const;
+                   bool keepPageOrder = false, bool profileFlip = false) const;
 
     QString deviceUri() const { return mDeviceUri; }
 

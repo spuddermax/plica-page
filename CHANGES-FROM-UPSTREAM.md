@@ -23,6 +23,23 @@ preserved; only the tags were dropped, and they remain in the `upstream` remote
 
 ---
 
+## 2026-10 — Duplex centering test page
+
+The centering test page measured one side only. "Print duplex centering test
+page" (Printer settings > Margins) prints it on both sides of one sheet,
+labeled FRONT and BACK, the way the profile prints double-sided: one two-sided
+job, flipped on the profile's own edge, for a duplexer; for manual duplex, two
+passes with the profile's turn-over prompt between them, the first pre-rotated
+when `calcDuplexPasses()` would pre-rotate a real job's. A side the printer
+puts through turned round gets its offset reversed, as in a real job, so the
+shift lands the same way on the paper. Each side is measured as before, and
+holding the sheet to the light shows whether the back's center cross sits on
+the front's. `Printer::printFile()` gained a flag to flip on the profile's
+edge rather than the layout's, for files that are not the project.
+
+The test page's instructions now start below the top ruler instead of running
+through it.
+
 ## 2026-10 — Paper sizes for applications, defined in the program
 
 The 5 x 8.25 in size was written into the PPD by hand. Sizes are now the user's

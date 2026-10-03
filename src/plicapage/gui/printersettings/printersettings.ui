@@ -325,6 +325,16 @@
               </property>
              </widget>
             </item>
+            <item row="3" column="0" colspan="3">
+             <widget class="QPushButton" name="duplexCenteringButton">
+              <property name="toolTip">
+               <string>Print the centering page on both sides of one sheet, labeled FRONT and BACK, the way this profile prints double-sided - turning the stack over by hand if it does. Shows where each side lands, and whether the back lines up with the front.</string>
+              </property>
+              <property name="text">
+               <string>Print duplex centering test page</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>

@@ -28,6 +28,7 @@
 #define CALIBRATIONSHEET_H
 
 #include <QString>
+#include <QList>
 
 class Printer;
 
@@ -59,5 +60,24 @@ QString writeCalibrationPdf(const Printer *printer, int pass);
  * user can print, measure, enter an offset, and print again to confirm.
  */
 QString writeCenteringPdf(const Printer *printer, qreal offsetX, qreal offsetY);
+
+/**
+ * One side of a duplex centering test sheet: the same page, labeled FRONT or
+ * BACK, with a note on checking the sides against each other.
+ *
+ * turnDrawing draws the page upside down on its own sheet, for a manual pass
+ * that has to be pre-rotated. negateOffset applies the offset the other way,
+ * for a side the printer itself puts through turned round - so that, as in a
+ * real job, the shift always lands the same way on the paper.
+ */
+struct CenteringSide
+{
+    bool back;
+    bool turnDrawing;
+    bool negateOffset;
+};
+
+QString writeDuplexCenteringPdf(const Printer *printer, qreal offsetX, qreal offsetY,
+                                const QList<CenteringSide> &sides);
 
 #endif // CALIBRATIONSHEET_H
