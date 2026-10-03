@@ -165,9 +165,9 @@ MainWindow::MainWindow(QWidget *parent):
             this, SLOT(trimPaddingChanged()));
 
     ui->foldLineCombo->addItem(tr("None", "Fold line"),                         FoldLineNone);
-    ui->foldLineCombo->addItem(tr("Solid gray", "Fold line"),                   FoldLineSolid);
-    ui->foldLineCombo->addItem(tr("Dotted gray", "Fold line"),                  FoldLineDotted);
-    ui->foldLineCombo->addItem(tr("Dotted gray with stitch marks", "Fold line"), FoldLineStitched);
+    ui->foldLineCombo->addItem(tr("Solid", "Fold line"),                   FoldLineSolid);
+    ui->foldLineCombo->addItem(tr("Dotted", "Fold line"),                  FoldLineDotted);
+    ui->foldLineCombo->addItem(tr("Dotted with stitch marks", "Fold line"), FoldLineStitched);
 
     // Same reasoning as the trim widgets: activated() and editingFinished()
     // fire only for the user, not for updateFoldLineWidgets().

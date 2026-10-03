@@ -161,7 +161,7 @@ Boomaga marked the fold of a booklet only in the on-screen preview, as a guide
 overlay that never reached the paper.
 
 - New fold-line option, shown in the Layout panel while Booklet is selected:
-  none, solid gray, dotted gray, or dotted gray with cross marks for stitching
+  none, solid, dotted, or dotted with cross marks for stitching
   at a spacing the user sets (default 2 in). Stored as `Project/FoldLine` and
   `Project/StitchSpacing`.
 - Drawn by `TmpPdfFile::foldLineStream()` into the sheet layer, inside the print

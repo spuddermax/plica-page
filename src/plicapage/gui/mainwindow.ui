@@ -142,7 +142,7 @@
               <item row="0" column="1">
                <widget class="QComboBox" name="foldLineCombo">
                 <property name="toolTip">
-                 <string comment="MainForm::Fold line tooltip">Print a gray line down the middle of each booklet sheet, where it is folded.</string>
+                 <string comment="MainForm::Fold line tooltip">Print a line down the middle of each booklet sheet, where it is folded, in the color chosen below.</string>
                 </property>
                </widget>
               </item>
