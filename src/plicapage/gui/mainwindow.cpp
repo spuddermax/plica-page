@@ -173,7 +173,11 @@ MainWindow::MainWindow(QWidget *parent):
     connect(ui->foldLineCombo, SIGNAL(activated(int)),
             this, SLOT(foldLineChanged()));
 
-    connect(ui->stitchSpacingSpin, SIGNAL(editingFinished()),
+    // Arrow clicks and the wheel apply at once; typed digits wait for Enter
+    // or leaving the field, rather than redrawing at every keystroke.
+    // updateFoldLineWidgets() blocks signals while it sets the value.
+    ui->stitchSpacingSpin->setKeyboardTracking(false);
+    connect(ui->stitchSpacingSpin, SIGNAL(valueChanged(double)),
             this, SLOT(stitchSpacingChanged()));
 
     ui->foldSidesCombo->addItem(tr("All sides", "Fold line sides"),              FoldSidesAll);
