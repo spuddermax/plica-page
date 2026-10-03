@@ -61,7 +61,8 @@ private slots:
     void trimPaddingChanged();
     void foldLineChanged();
     void stitchSpacingChanged();
-    void stitchMarksChanged();
+    void foldSidesChanged();
+    void stitchMarksChanged(bool value);
     void chooseFoldLineColor();
 
     bool print(uint count = 1, bool collate = true);

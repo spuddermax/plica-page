@@ -162,23 +162,22 @@ double  unitMax(Unit unit);
 enum FoldLine {
     FoldLineNone     = 0,
     FoldLineSolid    = 1,
-    FoldLineDotted   = 2,
-    FoldLineStitched = 3    // dotted, with cross marks where the stitches go
+    FoldLineDotted   = 2
 };
 
 QString foldLineToStr(FoldLine value);
 FoldLine strToFoldLine(const QString &str);
 
-// Which booklet sheet faces a FoldLineStitched fold puts its cross marks on.
-// The others still get the dotted line.
-enum StitchMarks {
-    StitchMarksAllFaces    = 0,
-    StitchMarksInsideFaces = 1,     // the inside of each folded sheet
-    StitchMarksCenter      = 2      // the centre spread of each booklet only
+// Which booklet sheet faces the fold line, and its stitch marks if any, are
+// printed on. The others get no line.
+enum FoldSides {
+    FoldSidesAll     = 0,
+    FoldSidesInside  = 1,   // the inside of each folded sheet: the stitch side
+    FoldSidesCenter  = 2    // the centre spread of each booklet only
 };
 
-QString stitchMarksToStr(StitchMarks value);
-StitchMarks strToStitchMarks(const QString &str);
+QString foldSidesToStr(FoldSides value);
+FoldSides strToFoldSides(const QString &str);
 
 struct PdfPageInfo
 {

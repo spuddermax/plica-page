@@ -167,7 +167,6 @@ MainWindow::MainWindow(QWidget *parent):
     ui->foldLineCombo->addItem(tr("None", "Fold line"),                         FoldLineNone);
     ui->foldLineCombo->addItem(tr("Solid", "Fold line"),                   FoldLineSolid);
     ui->foldLineCombo->addItem(tr("Dotted", "Fold line"),                  FoldLineDotted);
-    ui->foldLineCombo->addItem(tr("Dotted with stitch marks", "Fold line"), FoldLineStitched);
 
     // Same reasoning as the trim widgets: activated() and editingFinished()
     // fire only for the user, not for updateFoldLineWidgets().
@@ -177,12 +176,15 @@ MainWindow::MainWindow(QWidget *parent):
     connect(ui->stitchSpacingSpin, SIGNAL(editingFinished()),
             this, SLOT(stitchSpacingChanged()));
 
-    ui->stitchMarksCombo->addItem(tr("All sides", "Stitch marks"),              StitchMarksAllFaces);
-    ui->stitchMarksCombo->addItem(tr("Stitch side only", "Stitch marks"),       StitchMarksInsideFaces);
-    ui->stitchMarksCombo->addItem(tr("Center of booklet only", "Stitch marks"), StitchMarksCenter);
+    ui->foldSidesCombo->addItem(tr("All sides", "Fold line sides"),              FoldSidesAll);
+    ui->foldSidesCombo->addItem(tr("Stitch side only", "Fold line sides"),       FoldSidesInside);
+    ui->foldSidesCombo->addItem(tr("Center of booklet only", "Fold line sides"), FoldSidesCenter);
 
-    connect(ui->stitchMarksCombo, SIGNAL(activated(int)),
-            this, SLOT(stitchMarksChanged()));
+    connect(ui->foldSidesCombo, SIGNAL(activated(int)),
+            this, SLOT(foldSidesChanged()));
+
+    connect(ui->stitchMarksCbx, SIGNAL(clicked(bool)),
+            this, SLOT(stitchMarksChanged(bool)));
 
     connect(ui->foldLineColorBtn, SIGNAL(clicked()),
             this, SLOT(chooseFoldLineColor()));
@@ -368,7 +370,20 @@ void MainWindow::loadSettings()
     project->setTrimWhitespace(settings->value(Settings::TrimWhitespace).toBool());
 
     project->setStitchSpacing(settings->value(Settings::StitchSpacing).toDouble());
-    project->setStitchMarks(strToStitchMarks(settings->value(Settings::StitchMarks).toString()));
+    {
+        // Settings written before the stitch marks had a switch of their own:
+        // "Stitched" was a dotted line with marks, and "Project/StitchMarks"
+        // held the sides they went on.
+        const QString oldSides = "Project/StitchMarks";
+        if (!settings->contains(settings->keyToString(Settings::FoldSides)) && settings->contains(oldSides))
+            settings->setValue(Settings::FoldSides, settings->QSettings::value(oldSides).toString());
+        if (!settings->contains(settings->keyToString(Settings::StitchMarks)) &&
+            settings->value(Settings::FoldLine).toString().toUpper() == "STITCHED")
+            settings->setValue(Settings::StitchMarks, true);
+        settings->remove(oldSides);
+    }
+    project->setFoldSides(strToFoldSides(settings->value(Settings::FoldSides).toString()));
+    project->setStitchMarks(settings->value(Settings::StitchMarks).toBool());
     project->setFoldLineColor(QColor(settings->value(Settings::FoldLineColor).toString()));
     project->setFoldLine(strToFoldLine(settings->value(Settings::FoldLine).toString()));
 
@@ -400,7 +415,8 @@ void MainWindow::saveSettings()
 
     settings->setValue(Settings::FoldLine, foldLineToStr(project->foldLine()));
     settings->setValue(Settings::StitchSpacing, project->stitchSpacing());
-    settings->setValue(Settings::StitchMarks, stitchMarksToStr(project->stitchMarks()));
+    settings->setValue(Settings::FoldSides, foldSidesToStr(project->foldSides()));
+    settings->setValue(Settings::StitchMarks, project->stitchMarks());
     settings->setValue(Settings::FoldLineColor, project->foldLineColor().name());
 
 
@@ -709,9 +725,18 @@ void MainWindow::stitchSpacingChanged()
 /************************************************
 
  ************************************************/
-void MainWindow::stitchMarksChanged()
+void MainWindow::foldSidesChanged()
 {
-    project->setStitchMarks((StitchMarks)ui->stitchMarksCombo->currentData().toInt());
+    project->setFoldSides((FoldSides)ui->foldSidesCombo->currentData().toInt());
+}
+
+
+/************************************************
+
+ ************************************************/
+void MainWindow::stitchMarksChanged(bool value)
+{
+    project->setStitchMarks(value);
 }
 
 
@@ -770,15 +795,20 @@ void MainWindow::updateFoldLineWidgets()
 
     ui->foldLineCombo->setCurrentIndex(ui->foldLineCombo->findData(project->foldLine()));
 
-    const bool stitched = project->foldLine() == FoldLineStitched;
-    ui->stitchSpacingLbl->setEnabled(stitched);
-    ui->stitchSpacingSpin->setEnabled(stitched);
-    ui->stitchMarksLbl->setEnabled(stitched);
-    ui->stitchMarksCombo->setEnabled(stitched);
-
-    ui->stitchMarksCombo->setCurrentIndex(ui->stitchMarksCombo->findData(project->stitchMarks()));
-
+    // Everything below describes the line, so it waits for one to be chosen;
+    // the spacing waits for the marks as well.
     const bool anyLine = project->foldLine() != FoldLineNone;
+    ui->foldSidesLbl->setEnabled(anyLine);
+    ui->foldSidesCombo->setEnabled(anyLine);
+    ui->foldSidesCombo->setCurrentIndex(ui->foldSidesCombo->findData(project->foldSides()));
+
+    ui->stitchMarksCbx->setEnabled(anyLine);
+    ui->stitchMarksCbx->setChecked(project->stitchMarks());
+
+    const bool spacing = anyLine && project->stitchMarks();
+    ui->stitchSpacingLbl->setEnabled(spacing);
+    ui->stitchSpacingSpin->setEnabled(spacing);
+
     ui->foldLineColorLbl->setEnabled(anyLine);
     ui->foldLineColorBtn->setEnabled(anyLine);
 

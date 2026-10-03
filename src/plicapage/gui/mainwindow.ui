@@ -146,7 +146,7 @@
                 </property>
                </widget>
               </item>
-              <item row="3" column="0">
+              <item row="4" column="0">
                <widget class="QLabel" name="foldLineColorLbl">
                 <property name="text">
                  <string comment="MainForm::Fold line color label">Color:</string>
@@ -156,7 +156,7 @@
                 </property>
                </widget>
               </item>
-              <item row="3" column="1">
+              <item row="4" column="1">
                <widget class="QPushButton" name="foldLineColorBtn">
                 <property name="toolTip">
                  <string comment="MainForm::Fold line color tooltip">Color of the fold line and the stitch marks.</string>
@@ -164,6 +164,33 @@
                </widget>
               </item>
               <item row="1" column="0">
+               <widget class="QLabel" name="foldSidesLbl">
+                <property name="text">
+                 <string comment="MainForm::Fold sides label">Sides:</string>
+                </property>
+                <property name="buddy">
+                 <cstring>foldSidesCombo</cstring>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QComboBox" name="foldSidesCombo">
+                <property name="toolTip">
+                 <string comment="MainForm::Fold sides tooltip">Which sides of the sheets get the fold line, and its stitch marks. The stitch side is the inside of each folded sheet; the center of the booklet is the middle spread, where the stitches go through every sheet. Other sides get no line.</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0" colspan="2">
+               <widget class="QCheckBox" name="stitchMarksCbx">
+                <property name="toolTip">
+                 <string comment="MainForm::Stitch marks tooltip">Cross marks along the fold line where the stitches go, wherever the line is printed.</string>
+                </property>
+                <property name="text">
+                 <string comment="MainForm::Stitch marks checkbox">Stitch marks</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
                <widget class="QLabel" name="stitchSpacingLbl">
                 <property name="text">
                  <string comment="MainForm::Stitch spacing label">Stitch spacing:</string>
@@ -173,24 +200,7 @@
                 </property>
                </widget>
               </item>
-              <item row="2" column="0">
-               <widget class="QLabel" name="stitchMarksLbl">
-                <property name="text">
-                 <string comment="MainForm::Stitch marks label">Stitch marks:</string>
-                </property>
-                <property name="buddy">
-                 <cstring>stitchMarksCombo</cstring>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="1">
-               <widget class="QComboBox" name="stitchMarksCombo">
-                <property name="toolTip">
-                 <string comment="MainForm::Stitch marks tooltip">Which sides of the sheets get the cross marks. The stitch side is the inside of each folded sheet; the center of the booklet is the middle spread, where the stitches go through every sheet. With all sides or the stitch side, sides without marks still get the dotted line; with the center only, no other side gets a line.</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
+              <item row="3" column="1">
                <widget class="QDoubleSpinBox" name="stitchSpacingSpin">
                 <property name="toolTip">
                  <string comment="MainForm::Stitch spacing tooltip">Distance between the cross marks along the fold. One mark sits at the centre of the fold, and the others are spaced out from it as far as the pages reach.</string>

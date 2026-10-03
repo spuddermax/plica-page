@@ -145,10 +145,12 @@ public:
 
     /// What is printed along the fold of booklet sheets.
     FoldLine foldLine() const { return mFoldLine; }
-    /// Distance between stitch marks on a FoldLineStitched fold, in points.
+    /// Which sheet faces get the fold line.
+    FoldSides foldSides() const { return mFoldSides; }
+    /// Whether the fold line carries cross marks where the stitches go.
+    bool stitchMarks() const { return mStitchMarks; }
+    /// Distance between stitch marks, in points.
     qreal stitchSpacing() const { return mStitchSpacing; }
-    /// Which sheet faces get the stitch marks.
-    StitchMarks stitchMarks() const { return mStitchMarks; }
     /// Colour of the fold line and its stitch marks.
     QColor foldLineColor() const { return mFoldLineColor; }
 
@@ -289,7 +291,8 @@ public slots:
     void setTrimPadding(qreal points);
     void setFoldLine(FoldLine value);
     void setStitchSpacing(qreal points);
-    void setStitchMarks(StitchMarks value);
+    void setFoldSides(FoldSides value);
+    void setStitchMarks(bool value);
     void setFoldLineColor(const QColor &value);
     void update();
 
@@ -336,7 +339,8 @@ private:
     qreal mTrimPadding;
     FoldLine mFoldLine;
     qreal mStitchSpacing;
-    StitchMarks mStitchMarks;
+    FoldSides mFoldSides;
+    bool mStitchMarks;
     QColor mFoldLineColor;
     QList<ProjectPage*> mSelectedPages;
     QHash<const ProjectPage*, int> mPrintSheetOfPage;

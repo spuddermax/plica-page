@@ -69,7 +69,7 @@ void TestPlicaPage::test_FoldLineGeometry()
 {
     // 1/8 in all round.
     QRectF pageRect = letter.adjusted(9, 9, -9, -9);
-    QString s = TmpPdfFile::foldLineStream(FoldLineSolid, 144, gray, letter, pageRect);
+    QString s = TmpPdfFile::foldLineStream(FoldLineSolid, false, 144, gray, letter, pageRect);
     QVERIFY2(s.contains("0.000 396.000 m\n612.000 396.000 l\nS\n"), qPrintable(s));
     QVERIFY2(s.contains("[] 0 d"), "a solid line must reset the dash pattern");
     QCOMPARE(moveCount(s), 1);
@@ -78,10 +78,10 @@ void TestPlicaPage::test_FoldLineGeometry()
     // Layout top 9, bottom 39: the page rect spans 9..753, centre 381, which
     // is 792 - 381 = 411 from the bottom.
     pageRect = QRectF(9, 9, 594, 744);
-    s = TmpPdfFile::foldLineStream(FoldLineSolid, 144, gray, letter, pageRect);
+    s = TmpPdfFile::foldLineStream(FoldLineSolid, false, 144, gray, letter, pageRect);
     QVERIFY2(s.contains("0.000 411.000 m\n612.000 411.000 l"), qPrintable(s));
 
-    QVERIFY(TmpPdfFile::foldLineStream(FoldLineNone, 144, gray, letter, pageRect).isEmpty());
+    QVERIFY(TmpPdfFile::foldLineStream(FoldLineNone, false, 144, gray, letter, pageRect).isEmpty());
 }
 
 
@@ -90,7 +90,7 @@ void TestPlicaPage::test_FoldLineGeometry()
  ************************************************/
 void TestPlicaPage::test_FoldLineDotted()
 {
-    const QString s = TmpPdfFile::foldLineStream(FoldLineDotted, 144, gray, letter,
+    const QString s = TmpPdfFile::foldLineStream(FoldLineDotted, false, 144, gray, letter,
                                                  letter.adjusted(9, 9, -9, -9));
     QVERIFY2(s.contains("1 J\n[0 3] 0 d"), qPrintable(s));
     QCOMPARE(moveCount(s), 1);
@@ -120,7 +120,7 @@ void TestPlicaPage::test_FoldLineStitches()
     QFETCH(qreal, spacing);
     QFETCH(QList<qreal>, centres);
 
-    const QString s = TmpPdfFile::foldLineStream(FoldLineStitched, spacing, gray, letter,
+    const QString s = TmpPdfFile::foldLineStream(FoldLineDotted, true, spacing, gray, letter,
                                                  letter.adjusted(9, 9, -9, -9));
 
     // The fold is dotted under the marks.
@@ -136,6 +136,17 @@ void TestPlicaPage::test_FoldLineStitches()
                 .arg(x + 3, 0, 'f', 3);
         QVERIFY2(s.contains(cross), qPrintable(QString("no cross at %1:\n%2").arg(x).arg(s)));
     }
+
+    // The marks are a setting of their own: a solid line takes them as well,
+    // in the same places.
+    const QString solid = TmpPdfFile::foldLineStream(FoldLineSolid, true, spacing, gray, letter,
+                                                     letter.adjusted(9, 9, -9, -9));
+    QVERIFY2(!solid.contains("[0 3] 0 d"), qPrintable(solid));
+    QCOMPARE(moveCount(solid), 1 + 2 * centres.count());
+
+    // And without them, just the line.
+    QCOMPARE(moveCount(TmpPdfFile::foldLineStream(FoldLineDotted, false, spacing, gray, letter,
+                                                  letter.adjusted(9, 9, -9, -9))), 1);
 }
 
 
@@ -183,9 +194,11 @@ void TestPlicaPage::test_FoldLineSheets()
  ************************************************/
 void TestPlicaPage::test_FoldLineStrings()
 {
-    foreach (FoldLine f, QList<FoldLine>() << FoldLineNone << FoldLineSolid
-                                           << FoldLineDotted << FoldLineStitched)
+    foreach (FoldLine f, QList<FoldLine>() << FoldLineNone << FoldLineSolid << FoldLineDotted)
         QCOMPARE(strToFoldLine(foldLineToStr(f)), f);
+
+    // Settings from before the marks had a switch: the line was dotted.
+    QCOMPARE(strToFoldLine("Stitched"), FoldLineDotted);
 
     // An unknown value, e.g. from a newer version's settings, means no line.
     QCOMPARE(strToFoldLine("Wavy"), FoldLineNone);
@@ -278,34 +291,34 @@ void TestPlicaPage::test_StitchMarksPreviewSheets()
 
 
 /************************************************
- * Faces left without marks still get the dotted line.
+ * The sides setting decides which faces get the line at all; the marks, when
+ * on, go wherever the line goes. Columns: the sides, then whether the outside
+ * face, an inside face and the centre spread get a line.
  ************************************************/
-void TestPlicaPage::test_StitchMarksDrawn_data()
+void TestPlicaPage::test_FoldSidesDrawn_data()
 {
-    QTest::addColumn<int>("marks");
+    QTest::addColumn<int>("sides");
     QTest::addColumn<bool>("outside");
     QTest::addColumn<bool>("inside");
     QTest::addColumn<bool>("centre");
-    QTest::addColumn<bool>("lineEverywhere");   // false: only the centre has a line
 
-    QTest::newRow("all sides")   << int(StitchMarksAllFaces)    << true  << true  << true << true;
-    QTest::newRow("stitch side") << int(StitchMarksInsideFaces) << false << true  << true << true;
-    QTest::newRow("center only") << int(StitchMarksCenter)      << false << false << true << false;
+    QTest::newRow("all sides")   << int(FoldSidesAll)    << true  << true  << true;
+    QTest::newRow("stitch side") << int(FoldSidesInside) << false << true  << true;
+    QTest::newRow("center only") << int(FoldSidesCenter) << false << false << true;
 }
 
 
-void TestPlicaPage::test_StitchMarksDrawn()
+void TestPlicaPage::test_FoldSidesDrawn()
 {
-    QFETCH(int, marks);
+    QFETCH(int, sides);
     QFETCH(bool, outside);
     QFETCH(bool, inside);
     QFETCH(bool, centre);
-    QFETCH(bool, lineEverywhere);
 
     static LayoutNUp *layout = new LayoutNUp(1, 1);
     project->setLayout(layout);
-    project->setFoldLine(FoldLineStitched);
-    project->setStitchMarks(StitchMarks(marks));
+    project->setFoldLine(FoldLineSolid);
+    project->setFoldSides(FoldSides(sides));
 
     Sheet outsideSheet(2, 0);
     outsideSheet.setHints(Sheet::HintDrawFold);
@@ -315,39 +328,43 @@ void TestPlicaPage::test_StitchMarksDrawn()
     centreSheet.setHints(Sheet::HintDrawFold | Sheet::HintInsideFace | Sheet::HintCenterSpread);
 
     TmpPdfFile tmp;
-    auto check = [&](const Sheet &sheet, bool expected, const char *name)
+    for (int marks = 0; marks < 2; ++marks)
     {
-        QString stream;
-        tmp.getPageStream(&stream, &sheet);
-        // Marked sides always have the line; unmarked ones only when the
-        // marks are not confined to the centre.
-        const bool line = expected || lineEverywhere;
-        QVERIFY2(stream.contains("[0 3] 0 d") == line,
-                 qPrintable(QString("%1: dotted line %2 expected").arg(name).arg(line ? "was" : "was not")));
-        // The fold is one move; each cross adds two.
-        QVERIFY2((stream.count(" m\n") > 1) == expected,
-                 qPrintable(QString("%1: marks %2 expected").arg(name).arg(expected ? "were" : "were not")));
-    };
+        project->setStitchMarks(marks);
+        auto check = [&](const Sheet &sheet, bool line, const char *name)
+        {
+            QString stream;
+            tmp.getPageStream(&stream, &sheet);
+            // The fold is one move; each cross adds two.
+            const int moves = stream.count(" m\n");
+            QVERIFY2((moves > 0) == line,
+                     qPrintable(QString("%1: line %2 expected").arg(name).arg(line ? "was" : "was not")));
+            QVERIFY2((moves > 1) == (line && marks),
+                     qPrintable(QString("%1: marks %2 expected").arg(name).arg(line && marks ? "were" : "were not")));
+        };
 
-    check(outsideSheet, outside, "outside face");
-    check(insideSheet,  inside,  "inside face");
-    check(centreSheet,  centre,  "centre spread");
+        check(outsideSheet, outside, "outside face");
+        check(insideSheet,  inside,  "inside face");
+        check(centreSheet,  centre,  "centre spread");
+    }
 
     project->setFoldLine(FoldLineNone);
-    project->setStitchMarks(StitchMarksAllFaces);
+    project->setFoldSides(FoldSidesAll);
+    project->setStitchMarks(false);
 }
 
 
 /************************************************
 
  ************************************************/
-void TestPlicaPage::test_StitchMarksStrings()
+void TestPlicaPage::test_FoldSidesStrings()
 {
-    foreach (StitchMarks m, QList<StitchMarks>() << StitchMarksAllFaces
-                                                 << StitchMarksInsideFaces << StitchMarksCenter)
-        QCOMPARE(strToStitchMarks(stitchMarksToStr(m)), m);
+    foreach (FoldSides m, QList<FoldSides>() << FoldSidesAll << FoldSidesInside << FoldSidesCenter)
+        QCOMPARE(strToFoldSides(foldSidesToStr(m)), m);
 
-    QCOMPARE(strToStitchMarks(""), StitchMarksAllFaces);
+    // The strings the stitch-mark sides were stored under, which carry over.
+    QCOMPARE(strToFoldSides("Center"), FoldSidesCenter);
+    QCOMPARE(strToFoldSides(""), FoldSidesAll);
 }
 
 
@@ -397,7 +414,7 @@ void TestPlicaPage::test_UndoDeletePages()
  ************************************************/
 void TestPlicaPage::test_FoldLineColor()
 {
-    const QString s = TmpPdfFile::foldLineStream(FoldLineStitched, 144, QColor(255, 0, 51),
+    const QString s = TmpPdfFile::foldLineStream(FoldLineDotted, true, 144, QColor(255, 0, 51),
                                                  letter, letter.adjusted(9, 9, -9, -9));
     QVERIFY2(s.startsWith("q\n1.000 0.000 0.200 RG\n"), qPrintable(s));
     QCOMPARE(s.count(" RG\n"), 1);

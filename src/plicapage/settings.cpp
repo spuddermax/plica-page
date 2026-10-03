@@ -133,7 +133,11 @@ QString Settings::keyToString(Settings::Key key) const
 
     case FoldLine:                      return "Project/FoldLine";
     case StitchSpacing:                 return "Project/StitchSpacing";
-    case StitchMarks:                   return "Project/StitchMarks";
+    // "Project/StitchMarks" once held the sides the marks went on; the
+    // switch for the marks themselves has a key of its own, so that old
+    // value is read only to carry it over to FoldSides.
+    case StitchMarks:                   return "Project/StitchMarksOn";
+    case FoldSides:                     return "Project/FoldSides";
     case FoldLineColor:                 return "Project/FoldLineColor";
 
     // Preferences **************************
@@ -224,7 +228,8 @@ void Settings::init()
 
     setDefaultValue(FoldLine, foldLineToStr(FoldLineNone));
     setDefaultValue(StitchSpacing, fromUnit(2.0, UnitInch));
-    setDefaultValue(StitchMarks, stitchMarksToStr(StitchMarksAllFaces));
+    setDefaultValue(StitchMarks, false);
+    setDefaultValue(FoldSides, foldSidesToStr(FoldSidesAll));
     setDefaultValue(FoldLineColor, "#999999");
 
     QString dir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);

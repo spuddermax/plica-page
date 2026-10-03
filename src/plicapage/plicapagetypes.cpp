@@ -185,7 +185,6 @@ QString foldLineToStr(FoldLine value)
     case FoldLineNone:      return "None";
     case FoldLineSolid:     return "Solid";
     case FoldLineDotted:    return "Dotted";
-    case FoldLineStitched:  return "Stitched";
     }
     return "";
 }
@@ -198,8 +197,9 @@ FoldLine strToFoldLine(const QString &str)
 {
     QString s = str.toUpper();
     if (s == "SOLID")       return FoldLineSolid;
-    if (s == "DOTTED")      return FoldLineDotted;
-    if (s == "STITCHED")    return FoldLineStitched;
+    // "Stitched" was dotted with marks, before the marks became a setting
+    // of their own.
+    if (s == "DOTTED" || s == "STITCHED") return FoldLineDotted;
     return FoldLineNone;
 }
 
@@ -207,13 +207,13 @@ FoldLine strToFoldLine(const QString &str)
 /************************************************
 
  ************************************************/
-QString stitchMarksToStr(StitchMarks value)
+QString foldSidesToStr(FoldSides value)
 {
     switch (value)
     {
-    case StitchMarksAllFaces:       return "AllFaces";
-    case StitchMarksInsideFaces:    return "InsideFaces";
-    case StitchMarksCenter:         return "Center";
+    case FoldSidesAll:      return "AllFaces";
+    case FoldSidesInside:   return "InsideFaces";
+    case FoldSidesCenter:   return "Center";
     }
     return "";
 }
@@ -222,12 +222,12 @@ QString stitchMarksToStr(StitchMarks value)
 /************************************************
 
  ************************************************/
-StitchMarks strToStitchMarks(const QString &str)
+FoldSides strToFoldSides(const QString &str)
 {
     QString s = str.toUpper();
-    if (s == "INSIDEFACES") return StitchMarksInsideFaces;
-    if (s == "CENTER")      return StitchMarksCenter;
-    return StitchMarksAllFaces;
+    if (s == "INSIDEFACES") return FoldSidesInside;
+    if (s == "CENTER")      return FoldSidesCenter;
+    return FoldSidesAll;
 }
 
 

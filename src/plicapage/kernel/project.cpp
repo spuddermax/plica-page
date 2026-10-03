@@ -96,7 +96,8 @@ Project::Project(QObject *parent) :
     mTrimPadding(0),
     mFoldLine(FoldLineNone),
     mStitchSpacing(144),
-    mStitchMarks(StitchMarksAllFaces),
+    mFoldSides(FoldSidesAll),
+    mStitchMarks(false),
     mFoldLineColor(153, 153, 153),
     mSelectionAnchor(nullptr),
     mInkBoxesReady(false),
@@ -1441,7 +1442,7 @@ void Project::setStitchSpacing(qreal points)
 
     mStitchSpacing = points;
 
-    if (mFoldLine == FoldLineStitched)
+    if (mFoldLine != FoldLineNone && mStitchMarks)
         update();
 }
 
@@ -1449,14 +1450,29 @@ void Project::setStitchSpacing(qreal points)
 /************************************************
  *
  ************************************************/
-void Project::setStitchMarks(StitchMarks value)
+void Project::setFoldSides(FoldSides value)
+{
+    if (mFoldSides == value)
+        return;
+
+    mFoldSides = value;
+
+    if (mFoldLine != FoldLineNone)
+        update();
+}
+
+
+/************************************************
+ *
+ ************************************************/
+void Project::setStitchMarks(bool value)
 {
     if (mStitchMarks == value)
         return;
 
     mStitchMarks = value;
 
-    if (mFoldLine == FoldLineStitched)
+    if (mFoldLine != FoldLineNone)
         update();
 }
 

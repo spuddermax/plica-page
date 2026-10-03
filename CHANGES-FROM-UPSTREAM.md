@@ -160,10 +160,11 @@ shows them with a single re-layout and makes the first restored page current.
 Boomaga marked the fold of a booklet only in the on-screen preview, as a guide
 overlay that never reached the paper.
 
-- New fold-line option, shown in the Layout panel while Booklet is selected:
-  none, solid, dotted, or dotted with cross marks for stitching
-  at a spacing the user sets (default 2 in). Stored as `Project/FoldLine` and
-  `Project/StitchSpacing`.
+- New fold-line options, shown in the Layout panel while Booklet is selected:
+  the line (none, solid or dotted), the sides it goes on, and a separate
+  switch for cross marks where the stitches go, at a spacing the user sets
+  (default 2 in). Stored as `Project/FoldLine`, `Project/FoldSides`,
+  `Project/StitchMarksOn` and `Project/StitchSpacing`.
 - Drawn by `TmpPdfFile::foldLineStream()` into the sheet layer, inside the print
   offset so it stays registered with the pages, which puts it in the print, the
   PDF export and the preview alike; the preview's own guide steps aside while a
@@ -171,17 +172,19 @@ overlay that never reached the paper.
   so it follows the Internal margin and any unequal outer margins, and runs the
   full width of the paper. Stitch marks spread out from the centre of the fold
   and stop where the pages end.
-- The line is drawn on both faces of every booklet sheet, and never on the
-  preview sheet that joins two sub-booklets, which has no fold. Stitch marks can
-  go on all faces, only the inside of each folded sheet (the stitch side), or
-  only the centre spread of each booklet, where the stitches pass through every
-  sheet (`Project/StitchMarks`). With all faces or the stitch side, faces
-  without marks keep the dotted line; with the centre only, no other face
-  gets a line at all. The
-  layout tags printed sheets with new `HintInsideFace` and `HintCenterSpread`
-  hints to tell them apart. A reading spread in the preview holds one page from
-  an inside face and one from an outside face, so the preview shows "stitch
-  side" marks on every spread; only the centre spread is exact there.
+- The line, with its marks when they are on, goes on all faces, only the inside
+  of each folded sheet (the stitch side), or only the centre spread of each
+  booklet, where the stitches pass through every sheet; other faces get no
+  line. It is never drawn on the preview sheet that joins two sub-booklets,
+  which has no fold. The layout tags printed sheets with new `HintInsideFace`
+  and `HintCenterSpread` hints to tell them apart. A reading spread in the
+  preview holds one page from an inside face and one from an outside face, so
+  the preview shows a "stitch side" line on every spread; only the centre
+  spread is exact there.
+- The marks were first a fourth line style, "dotted with stitch marks", whose
+  sides setting placed the marks alone. Settings saved that way carry over:
+  `Stitched` becomes a dotted line with marks on, and the old
+  `Project/StitchMarks` sides become `Project/FoldSides`.
 - The line and its marks are drawn in a colour the user picks (default 60%
   gray, `Project/FoldLineColor`), set once as the stroke colour for both.
 

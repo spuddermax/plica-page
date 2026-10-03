@@ -79,9 +79,9 @@ signals:
 
 private:
     void getPageStream(QString *out, const Sheet *sheet) const;
-    static QString foldLineStream(FoldLine style, qreal stitchSpacing, const QColor &color,
+    static QString foldLineStream(FoldLine style, bool stitchMarks, qreal stitchSpacing, const QColor &color,
                                   const QRectF &paperRect, const QRectF &pageRect);
-    static bool hasStitchMarks(const Sheet *sheet, StitchMarks marks);
+    static bool hasFoldLine(const Sheet *sheet, FoldSides sides);
     void writeSheets(QIODevice *out, const QList<Sheet *> &sheets) const;
     void writeCatalog(PDF::Writer *writer, const QVector<PdfPageInfo> &pages);
 

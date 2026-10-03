@@ -673,15 +673,10 @@ void TmpPdfFile::getPageStream(QString *out, const Sheet *sheet) const
     if (sheet->hints().testFlag(Sheet::HintDrawFold) &&
         !sheet->hints().testFlag(Sheet::HintSubBooklet))
     {
-        // A side without marks keeps the dotted line - except with the marks
-        // at the centre only, where the centre spread is the one side to
-        // carry any line at all.
-        FoldLine style = project->foldLine();
-        if (style == FoldLineStitched && !hasStitchMarks(sheet, project->stitchMarks()))
-            style = (project->stitchMarks() == StitchMarksCenter) ? FoldLineNone : FoldLineDotted;
-
-        *out += foldLineStream(style, project->stitchSpacing(), project->foldLineColor(),
-                               printer->paperRect(), printer->pageRect());
+        if (hasFoldLine(sheet, project->foldSides()))
+            *out += foldLineStream(project->foldLine(), project->stitchMarks(),
+                                   project->stitchSpacing(), project->foldLineColor(),
+                                   printer->paperRect(), printer->pageRect());
     }
 
     *out += "Q\n";   // the print offset
@@ -689,15 +684,16 @@ void TmpPdfFile::getPageStream(QString *out, const Sheet *sheet) const
 
 
 /************************************************
- * Whether a booklet sheet's fold gets cross marks, or only the dotted line.
+ * Whether a booklet sheet gets the fold line - and its stitch marks, which go
+ * wherever the line does.
  ************************************************/
-bool TmpPdfFile::hasStitchMarks(const Sheet *sheet, StitchMarks marks)
+bool TmpPdfFile::hasFoldLine(const Sheet *sheet, FoldSides sides)
 {
-    switch (marks)
+    switch (sides)
     {
-    case StitchMarksAllFaces:       return true;
-    case StitchMarksInsideFaces:    return sheet->hints().testFlag(Sheet::HintInsideFace);
-    case StitchMarksCenter:         return sheet->hints().testFlag(Sheet::HintCenterSpread);
+    case FoldSidesAll:      return true;
+    case FoldSidesInside:   return sheet->hints().testFlag(Sheet::HintInsideFace);
+    case FoldSidesCenter:   return sheet->hints().testFlag(Sheet::HintCenterSpread);
     }
     return true;
 }
@@ -715,7 +711,7 @@ bool TmpPdfFile::hasStitchMarks(const Sheet *sheet, StitchMarks marks)
  * out from its centre so the pattern is symmetric and always has a middle
  * stitch.
  ************************************************/
-QString TmpPdfFile::foldLineStream(FoldLine style, qreal stitchSpacing, const QColor &color,
+QString TmpPdfFile::foldLineStream(FoldLine style, bool stitchMarks, qreal stitchSpacing, const QColor &color,
                                    const QRectF &paperRect, const QRectF &pageRect)
 {
     if (style == FoldLineNone)
@@ -740,7 +736,7 @@ QString TmpPdfFile::foldLineStream(FoldLine style, qreal stitchSpacing, const QC
             .arg(y,                 0, 'f', 3)
             .arg(paperRect.right(), 0, 'f', 3);
 
-    if (style == FoldLineStitched && stitchSpacing > 0)
+    if (stitchMarks && stitchSpacing > 0)
     {
         const qreal arm = 3;                    // a 6 pt cross
         const qreal center = pageRect.center().x();

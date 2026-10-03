@@ -83,9 +83,9 @@ private slots:
     void test_StitchMarksPrintSheets();
     void test_StitchMarksPrintSheets_data();
     void test_StitchMarksPreviewSheets();
-    void test_StitchMarksDrawn();
-    void test_StitchMarksDrawn_data();
-    void test_StitchMarksStrings();
+    void test_FoldSidesDrawn();
+    void test_FoldSidesDrawn_data();
+    void test_FoldSidesStrings();
     void test_UndoDeletePages();
     void test_FoldLineColor();
     void test_PageSelection();
