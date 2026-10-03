@@ -41,14 +41,14 @@
 #include <vector>
 
 static std::mutex gPopplerMutex;
-static bool gSerialise = false;
+static bool gSerialize = false;
 static std::atomic<bool> gStop(false);
 
 static void render_loop(const std::string &path, int iterations)
 {
     for (int i = 0; i < iterations && !gStop; ++i) {
         std::unique_ptr<poppler::document> doc;
-        if (gSerialise) { std::lock_guard<std::mutex> l(gPopplerMutex);
+        if (gSerialize) { std::lock_guard<std::mutex> l(gPopplerMutex);
             doc.reset(poppler::document::load_from_file(path)); }
         else doc.reset(poppler::document::load_from_file(path));
         if (!doc || doc->pages() < 1) continue;
@@ -58,7 +58,7 @@ static void render_loop(const std::string &path, int iterations)
         for (int p = 0; p < 3; ++p) {
             std::unique_ptr<poppler::page> pg(doc->create_page(p % doc->pages()));
             if (!pg) continue;
-            if (gSerialise) { std::lock_guard<std::mutex> l(gPopplerMutex);
+            if (gSerialize) { std::lock_guard<std::mutex> l(gPopplerMutex);
                 poppler::image im = r.render_page(pg.get(), 150, 150); (void)im.is_valid(); }
             else { poppler::image im = r.render_page(pg.get(), 150, 150); (void)im.is_valid(); }
         }
@@ -66,10 +66,10 @@ static void render_loop(const std::string &path, int iterations)
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 4) { std::fprintf(stderr, "usage: %s <pdf> <threads> <iters> [serialise]\n", argv[0]); return 2; }
+    if (argc < 4) { std::fprintf(stderr, "usage: %s <pdf> <threads> <iters> [serialize]\n", argv[0]); return 2; }
     const std::string path = argv[1];
     const int threads = std::atoi(argv[2]), iters = std::atoi(argv[3]);
-    gSerialise = (argc > 4);
+    gSerialize = (argc > 4);
     std::vector<std::thread> pool;
     for (int t = 0; t < threads; ++t) pool.emplace_back(render_loop, path, iters);
     for (auto &t : pool) t.join();

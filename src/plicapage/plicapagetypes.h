@@ -173,7 +173,7 @@ FoldLine strToFoldLine(const QString &str);
 enum FoldSides {
     FoldSidesAll     = 0,
     FoldSidesInside  = 1,   // the inside of each folded sheet: the stitch side
-    FoldSidesCenter  = 2    // the centre spread of each booklet only
+    FoldSidesCenter  = 2    // the center spread of each booklet only
 };
 
 QString foldSidesToStr(FoldSides value);

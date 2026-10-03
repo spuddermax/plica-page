@@ -61,7 +61,7 @@ AboutDialog::AboutDialog(QWidget *parent) :
 
     ui->thanksBrowser->setHtml(css + thanksText());
     ui->thanksBrowser->viewport()->setAutoFillBackground(false);
-    // Upstream hid this tab, which meant the attribution the Icons8 licence
+    // Upstream hid this tab, which meant the attribution the Icons8 license
     // requires was compiled in but never shown to anyone. It stays visible.
 
     ui->translationsBrowser->setHtml(css + translationsText());

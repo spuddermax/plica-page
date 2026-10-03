@@ -44,7 +44,7 @@ QImage doRenderSheet(poppler::document *doc, int sheetNum, double resolution)
     // Covers the whole of the poppler work - the page, the render, and the
     // image that owns the pixels. Shared, so renders still overlap each other;
     // the first one in the process is the exception, and takes the gate alone
-    // so poppler finishes building its global colour profiles before anything
+    // so poppler finishes building its global color profiles before anything
     // else is inside the library. See popplergate.h.
     PopplerGate::RenderLock gate;
 

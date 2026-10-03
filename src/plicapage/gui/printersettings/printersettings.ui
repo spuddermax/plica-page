@@ -321,7 +321,7 @@
             <item row="2" column="0" colspan="3">
              <widget class="QPushButton" name="centeringButton">
               <property name="text">
-               <string>Print centring test page</string>
+               <string>Print centering test page</string>
               </property>
              </widget>
             </item>

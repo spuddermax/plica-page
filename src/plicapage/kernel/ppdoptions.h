@@ -57,7 +57,7 @@ struct PpdOption
 /**
  * The options a printer's PPD lets a job choose, in the PPD's own order and
  * groups, so the settings dialog can offer them without knowing anything about
- * the driver. Options PlicaPage manages itself (paper size, colour, duplex) and
+ * the driver. Options PlicaPage manages itself (paper size, color, duplex) and
  * ones that can't be chosen per job (installable hardware) are left out.
  */
 class PpdOptions

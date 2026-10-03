@@ -756,7 +756,7 @@ void MainWindow::chooseFoldLineColor()
 {
     const QColor color = QColorDialog::getColor(project->foldLineColor(), this,
                                                 tr("Fold line color"));
-    // Invalid when the dialog is cancelled.
+    // Invalid when the dialog is canceled.
     if (color.isValid())
         project->setFoldLineColor(color);
 }
@@ -821,7 +821,7 @@ void MainWindow::updateFoldLineWidgets()
     ui->foldLineColorLbl->setEnabled(anyLine);
     ui->foldLineColorBtn->setEnabled(anyLine);
 
-    // A swatch, framed so a pale colour still shows against the button.
+    // A swatch, framed so a pale color still shows against the button.
     QPixmap swatch(32, 16);
     swatch.fill(project->foldLineColor());
     {

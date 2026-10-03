@@ -43,7 +43,7 @@ Q_DECLARE_METATYPE(Project::PagesOrder)
 
 
 /************************************************
- * The behaviour of the two duplex modes that existed before the flip edge and
+ * The behavior of the two duplex modes that existed before the flip edge and
  * the stacking order were stored separately.
  *
  * These rows are the contract: whatever else changes, a profile carrying a

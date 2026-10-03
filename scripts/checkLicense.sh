@@ -25,11 +25,11 @@
 #
 # END_COMMON_COPYRIGHT_HEADER
 
-# Verifies that every C++ source file carries a licence marker compatible with
+# Verifies that every C++ source file carries a license marker compatible with
 # the project: BSD 3-Clause, or LGPL v2.1 or later.
 #
 # Exits non-zero when a file is non-compliant, so it can gate CI. Upstream's
-# version only printed colours and always succeeded, which meant a file could
+# version only printed colors and always succeeded, which meant a file could
 # lose its copyright header without anyone noticing.
 #
 #   ./scripts/checkLicense.sh [dir]      # defaults to the whole repository
@@ -65,23 +65,23 @@ while read -r file; do
             ;;
 
         *GPL2*|*GPL3*|*LGPL2*|*LGPL3*)
-            colour=$RED
+            color=$RED
             ;;
 
         *)
-            colour=$RED_BG
+            color=$RED_BG
             [ -z "$license" ] && license='Not set'
             ;;
     esac
 
-    printf "${colour}%-20s %s${NORM}\n" "$license" "$file"
+    printf "${color}%-20s %s${NORM}\n" "$license" "$file"
     failed=$((failed + 1))
 done < <(git ls-files -- "${DIR}" | grep -E '\.(cpp|h)$')
 
 if [ "$failed" -gt 0 ]; then
     echo
-    echo "${failed} of ${checked} files have a missing or incompatible licence header."
+    echo "${failed} of ${checked} files have a missing or incompatible license header."
     exit 1
 fi
 
-echo "All ${checked} C++ files carry a compatible licence header."
+echo "All ${checked} C++ files carry a compatible license header."

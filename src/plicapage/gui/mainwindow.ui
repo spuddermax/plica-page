@@ -203,7 +203,7 @@
               <item row="3" column="1">
                <widget class="QDoubleSpinBox" name="stitchSpacingSpin">
                 <property name="toolTip">
-                 <string comment="MainForm::Stitch spacing tooltip">Distance between the cross marks along the fold. One mark sits at the centre of the fold, and the others are spaced out from it as far as the pages reach.</string>
+                 <string comment="MainForm::Stitch spacing tooltip">Distance between the cross marks along the fold. One mark sits at the center of the fold, and the others are spaced out from it as far as the pages reach.</string>
                 </property>
                </widget>
               </item>

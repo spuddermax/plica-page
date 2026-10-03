@@ -51,6 +51,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # Every .cpp/.h must carry an LGPL2+/BSD-compatible copyright header.
-      # Upstream's script only printed colours and never failed; this enforces it.
+      # Upstream's script only printed colors and never failed; this enforces it.
       - name: Check copyright headers
         run: ./scripts/checkLicense.sh

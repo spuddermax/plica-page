@@ -25,7 +25,7 @@ the document loaded. From there you can:
 - **Reorder, rotate and hide** individual pages before printing.
 - **Export to PDF** instead of printing.
 
-Lengths are shown in millimetres or inches, following your locale by default and
+Lengths are shown in millimeters or inches, following your locale by default and
 switchable in Preferences.
 
 ## Relationship to Boomaga
@@ -147,7 +147,7 @@ They run headless; no display required.
   one window unopened; the job itself is not lost, and printing again brings it
   up. Leaving a second or two between the two jobs avoids it.
 
-## Licence
+## License
 
 LGPL-2.1-or-later. See [COPYING](COPYING) for the full picture, including the
 GPL-licensed PPD and third-party assets.

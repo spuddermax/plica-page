@@ -33,7 +33,7 @@
 
 /************************************************
  * Options a job must not set on its own, either because PlicaPage decides them
- * from the project (paper, duplex) or because the colour-mode combo already
+ * from the project (paper, duplex) or because the color-mode combo already
  * covers them through findGrayScaleOption().
  ************************************************/
 static const char *const managedOptions[] = {

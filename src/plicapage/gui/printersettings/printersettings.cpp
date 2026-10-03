@@ -578,7 +578,7 @@ void PrinterSettings::resetToDefault()
 
 
 /************************************************
- * Spools the centring page with the offset as currently entered, so the same
+ * Spools the centering page with the offset as currently entered, so the same
  * sheet both measures the printer and confirms a correction.
  ************************************************/
 void PrinterSettings::printCenteringPage()
@@ -595,7 +595,7 @@ void PrinterSettings::printCenteringPage()
 
     const QString file = writeCenteringPdf(mPrinter, profile->printOffsetX(), profile->printOffsetY());
     if (!file.isEmpty())
-        mPrinter->printFile(file, tr("PlicaPage centring test", "Print job name"), false, 1, false);
+        mPrinter->printFile(file, tr("PlicaPage centering test", "Print job name"), false, 1, false);
 }
 
 

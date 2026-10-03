@@ -28,13 +28,13 @@ that interleaved loads did not.
 That conclusion was wrong, and the reason is worth remembering: every one of
 those reproducers renders concurrently in *all* of its modes. Concurrent
 rendering was never the variable under test, so it could never be exonerated,
-and locking that happened to serialise it looked like it had fixed the loads.
+and locking that happened to serialize it looked like it had fixed the loads.
 
 The crash is **render against render**. What settled it was a core dump from
 PlicaPage's own stress test: five worker threads all inside `render_page`, the
 main thread asleep in `qWait`, and no load or destroy anywhere in the process.
 The abort itself lands in `cmsCloseProfile` under `GfxState`'s constructor -
-poppler's lazily built global colour profiles, set up without a guard by
+poppler's lazily built global color profiles, set up without a guard by
 whichever renders reach them first. A double free is reported when something is
 freed, not when the heap was corrupted, so an idle main thread at the moment of
 the abort proves nothing on its own.

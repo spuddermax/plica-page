@@ -156,7 +156,7 @@ QString writeCalibrationPdf(const Printer *printer, int pass)
 
 
 /************************************************
- * The rulers are labelled with the distance the PDF puts each mark from the
+ * The rulers are labeled with the distance the PDF puts each mark from the
  * sheet edge. Measuring where the marks really land tells the user how far the
  * printer is off, and in which direction.
  ************************************************/
@@ -172,7 +172,7 @@ QString writeCenteringPdf(const Printer *printer, qreal offsetX, qreal offsetY)
 
     QPdfWriter pdf(fileName);
     pdf.setCreator("PlicaPage");
-    pdf.setTitle(QObject::tr("Centring test page", "Title of the printed centring test document"));
+    pdf.setTitle(QObject::tr("Centering test page", "Title of the printed centering test document"));
     pdf.setResolution(72);
     pdf.setPageSize(QPageSize(paper, QPageSize::Point, QString(), QPageSize::ExactMatch));
     pdf.setPageMargins(QMarginsF(0, 0, 0, 0), QPageLayout::Point);
@@ -200,7 +200,7 @@ QString writeCenteringPdf(const Printer *printer, qreal offsetX, qreal offsetY)
     }
 
     QFont small; small.setPointSizeF(6); painter.setFont(small);
-    // Ticks every millimetre from 2 to 30 mm in from each edge, labelled every 5.
+    // Ticks every millimeter from 2 to 30 mm in from each edge, labeled every 5.
     for (int d = 2; d <= 30; ++d)
     {
         const qreal p = d * mm; const bool major = (d % 5 == 0); const qreal len = major ? 6 : 3;
@@ -225,8 +225,8 @@ QString writeCenteringPdf(const Printer *printer, qreal offsetX, qreal offsetY)
 
     QFont text; text.setPointSizeF(9); painter.setFont(text);
     const QStringList lines = QStringList()
-        << QObject::tr("PlicaPage centring test page", "Caption on the centring test sheet")
-        << QObject::tr("Each ruler is labelled with its distance in mm from the sheet edge as the PDF defines it.")
+        << QObject::tr("PlicaPage centering test page", "Caption on the centering test sheet")
+        << QObject::tr("Each ruler is labeled with its distance in mm from the sheet edge as the PDF defines it.")
         << QObject::tr("Measure the real distance from the paper edge to the 10 mm mark on all four sides.")
         << QObject::tr("Horizontal offset = (right - left) / 2.   Vertical offset = (top - bottom) / 2.")
         << QObject::tr("Enter them under Margins > Print offset, then print this page again: all four should read 10.")

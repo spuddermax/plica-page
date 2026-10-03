@@ -33,7 +33,7 @@
 // GfxState's constructor, so the race is render against render.
 //
 // Mode 1 renders one page on the main thread before the threads start, which
-// forces poppler's lazy one-time colour-profile setup to complete while nothing
+// forces poppler's lazy one-time color-profile setup to complete while nothing
 // else is running. That is the whole fix, and it is what this measures.
 //
 //   g++ -O2 -std=c++14 popplerstress5.cpp $(pkg-config --cflags --libs poppler-cpp) -pthread -o stress5
@@ -67,7 +67,7 @@ static void render_one(poppler::document *doc, int page)
 static void render_loop(poppler::document *doc, int rounds, int threads)
 {
     // Line every thread up so they all call render_page() together. A stagger
-    // of even a millisecond is enough to hide a one-time initialisation race.
+    // of even a millisecond is enough to hide a one-time initialization race.
     ++gArrived;
     while (!gGo.load())
         std::this_thread::yield();

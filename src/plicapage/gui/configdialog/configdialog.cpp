@@ -193,7 +193,7 @@ void ConfigDialog::saveSettings()
 
     settings->setValue(Settings::RightToLeft, ui->rightToLeft->isChecked());
 
-    // Units are display-only, but the widgets showing them have to be relabelled,
+    // Units are display-only, but the widgets showing them have to be relabeled,
     // and update() is what gets MainWindow::updateWidgets() called.
     Unit unit = static_cast<Unit>(ui->unitsCombo->currentData().toInt());
     if (currentUnit() != unit)

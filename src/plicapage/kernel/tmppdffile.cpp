@@ -639,7 +639,7 @@ void TmpPdfFile::getPageStream(QString *out, const Sheet *sheet) const
             // Clip to that rect ...............
             // The XObject's own /BBox only clips to the original CropBox, so
             // without this anything outside a trimmed box would still be
-            // painted - and scaled up - straight over the neighbouring pages
+            // painted - and scaled up - straight over the neighboring pages
             // on the sheet.
             *out += QString("%1 %2 %3 %4 re\nW\nn\n")
                     .arg(rect.left(),   0, 'f', 3)
@@ -703,12 +703,12 @@ bool TmpPdfFile::hasFoldLine(const Sheet *sheet, FoldSides sides)
  * The fold of a booklet sheet, in the same unrotated portrait frame as
  * getPageStream(). The booklet's two pages are stacked in that frame, each
  * half of pageRect less half the internal margin, so the fold is a horizontal
- * line through the centre of pageRect - the middle of the gap between them,
+ * line through the center of pageRect - the middle of the gap between them,
  * whatever the margins. It runs the full width of the paper, to the edges
  * where the sheet is lined up for folding.
  *
  * Stitch marks are kept within the pages' extent along the fold, and spaced
- * out from its centre so the pattern is symmetric and always has a middle
+ * out from its center so the pattern is symmetric and always has a middle
  * stitch.
  ************************************************/
 QString TmpPdfFile::foldLineStream(FoldLine style, bool stitchMarks, qreal stitchSpacing, const QColor &color,
@@ -720,7 +720,7 @@ QString TmpPdfFile::foldLineStream(FoldLine style, bool stitchMarks, qreal stitc
     // PDF's origin is bottom left, the layout's top left.
     const qreal y = paperRect.height() - pageRect.center().y();
 
-    // One stroke colour for the line and the marks.
+    // One stroke color for the line and the marks.
     QString res = QString("q\n%1 %2 %3 RG\n")
             .arg(color.redF(),   0, 'f', 3)
             .arg(color.greenF(), 0, 'f', 3)

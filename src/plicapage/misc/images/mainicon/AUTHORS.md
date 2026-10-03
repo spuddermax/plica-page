@@ -12,7 +12,7 @@ Why it is not Boomaga's icon
 ----------------------------
 
 Upstream Boomaga used a Flaticon icon (`flaticon.com/free-icon/printer_216211`)
-under Flaticon's "free licence with attribution". That licence forbids
+under Flaticon's "free licence with attribution". That license forbids
 *"offering Flaticon Contents designs (or modified Flaticon Contents versions)
 for download"* and *"distributing Flaticon Contents unless expressly
 authorized"* — which is precisely what publishing them in a source repository
@@ -22,4 +22,4 @@ carries no Flaticon material.
 The toolbar icons under `../icons/` are a separate matter: they are Icons8 work
 under CC BY-ND 3.0, which permits redistribution *unmodified* with attribution.
 They are used as-is and credited in the About dialog's "Thanks" tab. Do not
-recolour or restyle them — the licence is no-derivatives.
+recolor or restyle them — the license is no-derivatives.

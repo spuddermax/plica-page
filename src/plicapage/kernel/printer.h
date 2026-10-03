@@ -69,7 +69,7 @@ public:
      * Shift applied to every sheet as the last step before it is spooled,
      * measured in the printed page's own frame: positive X moves the print
      * towards the right edge of the sheet, positive Y towards the top. It
-     * compensates for a printer that places its image off the sheet's centre.
+     * compensates for a printer that places its image off the sheet's center.
      */
     qreal printOffsetX(Unit unit=UnitPoint) const;
     void setPrintOffsetX(qreal value, Unit unit);

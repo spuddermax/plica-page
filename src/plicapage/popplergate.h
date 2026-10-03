@@ -34,7 +34,7 @@
  * launch in five on a large scanned document, taking the loaded jobs with it.
  * Stock Boomaga aborts the same way, so this is inherited rather than new.
  *
- * The cause is poppler's lazily initialised global colour management. The
+ * The cause is poppler's lazily initialized global color management. The
  * first render in the process builds the shared lcms profiles and transforms
  * on its way through GfxState's constructor, and that setup is not guarded. Two
  * renders reaching it together corrupt the heap, and the abort lands later in
@@ -43,7 +43,7 @@
  * like a mystery.
  *
  * Once that setup has completed, rendering in parallel is fine. So the gate
- * does not serialise the render path; it only makes sure the first render runs
+ * does not serialize the render path; it only makes sure the first render runs
  * on its own:
  *
  *   RenderLock    Held while touching a live document - creating a page,
@@ -113,7 +113,7 @@ private:
  * High-water mark of RenderLocks held at once since the last reset.
  *
  * Instrumentation for the tests. The fix would be just as crash-free if it
- * had quietly serialised every render, and the preview would be eight times
+ * had quietly serialized every render, and the preview would be eight times
  * slower for it, so the tests assert that renders still overlap rather than
  * trusting that they do. The cost is one atomic increment per page rendered,
  * which is nothing beside the render.

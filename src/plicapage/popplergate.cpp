@@ -39,7 +39,7 @@ namespace
  * Render workers live on QThreads, and a document freed during static
  * destruction would otherwise reach for a lock that had already gone. Leaking
  * one lock for the life of the process is the cheap way to make the gate
- * outlast everything that uses it. Function-local static initialisation is
+ * outlast everything that uses it. Function-local static initialization is
  * itself thread-safe, so the first caller cannot race a second one.
  ************************************************/
 QReadWriteLock &gate()

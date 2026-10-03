@@ -39,8 +39,8 @@ class Printer;
  * Each page carries a big identifying glyph and a solid bar flush against one
  * edge of the printable area:
  *
- *      pass 1 -> "1" and "2", bar labelled SIDE 1
- *      pass 2 -> "A" and "B", bar labelled SIDE 2
+ *      pass 1 -> "1" and "2", bar labeled SIDE 1
+ *      pass 2 -> "A" and "B", bar labeled SIDE 2
  *
  * The bar is what makes the answer readable. Once a sheet has been printed on
  * both sides, the two bars sitting at the same edge of the paper means the
@@ -54,7 +54,7 @@ class Printer;
 QString writeCalibrationPdf(const Printer *printer, int pass);
 
 /**
- * One page with a crosshair at the exact centre and a ruler in from each edge,
+ * One page with a crosshair at the exact center and a ruler in from each edge,
  * drawn with the given print offset (points, page frame) already applied so the
  * user can print, measure, enter an offset, and print again to confirm.
  */

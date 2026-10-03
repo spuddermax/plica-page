@@ -193,7 +193,7 @@ void TestPlicaPage::test_RenderCrossInstanceRace()
  * suspect and it was the wrong one: with the reloads taken away entirely this
  * still aborted 4 runs in 20, every thread sitting innocently inside
  * render_page and the main thread asleep. What collides is poppler's one-time
- * colour-management setup, reached by whichever renders happen to be first.
+ * color-management setup, reached by whichever renders happen to be first.
  *
  * Keep it. It is the only test here that fails for the real reason rather than
  * for a plausible one.
@@ -225,7 +225,7 @@ void TestPlicaPage::test_RenderNoReloadStress()
 
 
 /************************************************
- * The gate has to let renders overlap. Serialising them would fix the crash
+ * The gate has to let renders overlap. Serializing them would fix the crash
  * and cost most of the preview's speed, so the property is worth pinning down
  * rather than trusting.
  *

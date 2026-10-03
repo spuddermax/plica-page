@@ -63,7 +63,7 @@ static int moveCount(const QString &stream)
 
 /************************************************
  * The fold sits in the middle of the gap between the two pages, which is the
- * centre of the margins-adjusted page rect, and runs the full paper width.
+ * center of the margins-adjusted page rect, and runs the full paper width.
  ************************************************/
 void TestPlicaPage::test_FoldLineGeometry()
 {
@@ -74,8 +74,8 @@ void TestPlicaPage::test_FoldLineGeometry()
     QVERIFY2(s.contains("[] 0 d"), "a solid line must reset the dash pattern");
     QCOMPARE(moveCount(s), 1);
 
-    // Unequal top and bottom margins move the fold off the paper's centre.
-    // Layout top 9, bottom 39: the page rect spans 9..753, centre 381, which
+    // Unequal top and bottom margins move the fold off the paper's center.
+    // Layout top 9, bottom 39: the page rect spans 9..753, center 381, which
     // is 792 - 381 = 411 from the bottom.
     pageRect = QRectF(9, 9, 594, 744);
     s = TmpPdfFile::foldLineStream(FoldLineSolid, false, 144, gray, letter, pageRect);
@@ -98,15 +98,15 @@ void TestPlicaPage::test_FoldLineDotted()
 
 
 /************************************************
- * Marks are spaced from the centre of the fold out, as far as the pages
+ * Marks are spaced from the center of the fold out, as far as the pages
  * reach along it - never past them.
  ************************************************/
 void TestPlicaPage::test_FoldLineStitches_data()
 {
     QTest::addColumn<qreal>("spacing");
-    QTest::addColumn<QList<qreal> >("centres");
+    QTest::addColumn<QList<qreal> >("centers");
 
-    // Page rect 9..603 along the fold, centre 306, reach 297.
+    // Page rect 9..603 along the fold, center 306, reach 297.
     QTest::newRow("2 in")   << qreal(144) << (QList<qreal>() << 18 << 162 << 306 << 450 << 594);
     QTest::newRow("3 in")   << qreal(216) << (QList<qreal>() << 90 << 306 << 522);
     // Exactly the reach: the outermost marks land on the page edges.
@@ -118,7 +118,7 @@ void TestPlicaPage::test_FoldLineStitches_data()
 void TestPlicaPage::test_FoldLineStitches()
 {
     QFETCH(qreal, spacing);
-    QFETCH(QList<qreal>, centres);
+    QFETCH(QList<qreal>, centers);
 
     const QString s = TmpPdfFile::foldLineStream(FoldLineDotted, true, spacing, gray, letter,
                                                  letter.adjusted(9, 9, -9, -9));
@@ -127,9 +127,9 @@ void TestPlicaPage::test_FoldLineStitches()
     QVERIFY2(s.contains("[0 3] 0 d"), qPrintable(s));
 
     // The line, then two strokes per cross.
-    QCOMPARE(moveCount(s), 1 + 2 * centres.count());
+    QCOMPARE(moveCount(s), 1 + 2 * centers.count());
 
-    foreach (qreal x, centres)
+    foreach (qreal x, centers)
     {
         const QString cross = QString("%1 393.000 m\n%2 399.000 l\n")
                 .arg(x - 3, 0, 'f', 3)
@@ -142,7 +142,7 @@ void TestPlicaPage::test_FoldLineStitches()
     const QString solid = TmpPdfFile::foldLineStream(FoldLineSolid, true, spacing, gray, letter,
                                                      letter.adjusted(9, 9, -9, -9));
     QVERIFY2(!solid.contains("[0 3] 0 d"), qPrintable(solid));
-    QCOMPARE(moveCount(solid), 1 + 2 * centres.count());
+    QCOMPARE(moveCount(solid), 1 + 2 * centers.count());
 
     // And without them, just the line.
     QCOMPARE(moveCount(TmpPdfFile::foldLineStream(FoldLineDotted, false, spacing, gray, letter,
@@ -222,17 +222,17 @@ static QList<ProjectPage*> setBookletPages(int count)
 
 /************************************************
  * Printed sheets come in pairs, outside then inside. The inside of the last
- * pair written is the innermost sheet's: the centre spread.
+ * pair written is the innermost sheet's: the center spread.
  ************************************************/
 void TestPlicaPage::test_StitchMarksPrintSheets_data()
 {
     QTest::addColumn<int>("pageCount");
-    QTest::addColumn<QString>("expected");   // per sheet: o/i, C for the centre
+    QTest::addColumn<QString>("expected");   // per sheet: o/i, C for the center
 
     QTest::newRow("4 pages")  << 4  << "o iC";
     QTest::newRow("8 pages")  << 8  << "o i o iC";
     QTest::newRow("12 pages") << 12 << "o i o i o iC";
-    // Padded with blanks to 12; the centre is still the innermost sheet.
+    // Padded with blanks to 12; the center is still the innermost sheet.
     QTest::newRow("10 pages") << 10 << "o i o i o iC";
 }
 
@@ -265,7 +265,7 @@ void TestPlicaPage::test_StitchMarksPrintSheets()
 
 
 /************************************************
- * In the preview only the spread holding the two middle pages is the centre.
+ * In the preview only the spread holding the two middle pages is the center.
  ************************************************/
 void TestPlicaPage::test_StitchMarksPreviewSheets()
 {
@@ -278,8 +278,8 @@ void TestPlicaPage::test_StitchMarksPreviewSheets()
     QCOMPARE(sheets.count(), 5);
     for (int i = 0; i < sheets.count(); ++i)
     {
-        const bool centre = sheets.at(i)->hints().testFlag(Sheet::HintCenterSpread);
-        QCOMPARE(centre, i == 2);
+        const bool center = sheets.at(i)->hints().testFlag(Sheet::HintCenterSpread);
+        QCOMPARE(center, i == 2);
     }
     QCOMPARE(sheets.at(2)->page(0), pages.at(3));
     QCOMPARE(sheets.at(2)->page(1), pages.at(4));
@@ -293,14 +293,14 @@ void TestPlicaPage::test_StitchMarksPreviewSheets()
 /************************************************
  * The sides setting decides which faces get the line at all; the marks, when
  * on, go wherever the line goes. Columns: the sides, then whether the outside
- * face, an inside face and the centre spread get a line.
+ * face, an inside face and the center spread get a line.
  ************************************************/
 void TestPlicaPage::test_FoldSidesDrawn_data()
 {
     QTest::addColumn<int>("sides");
     QTest::addColumn<bool>("outside");
     QTest::addColumn<bool>("inside");
-    QTest::addColumn<bool>("centre");
+    QTest::addColumn<bool>("center");
 
     QTest::newRow("all sides")   << int(FoldSidesAll)    << true  << true  << true;
     QTest::newRow("stitch side") << int(FoldSidesInside) << false << true  << true;
@@ -313,7 +313,7 @@ void TestPlicaPage::test_FoldSidesDrawn()
     QFETCH(int, sides);
     QFETCH(bool, outside);
     QFETCH(bool, inside);
-    QFETCH(bool, centre);
+    QFETCH(bool, center);
 
     static LayoutNUp *layout = new LayoutNUp(1, 1);
     project->setLayout(layout);
@@ -324,8 +324,8 @@ void TestPlicaPage::test_FoldSidesDrawn()
     outsideSheet.setHints(Sheet::HintDrawFold);
     Sheet insideSheet(2, 1);
     insideSheet.setHints(Sheet::HintDrawFold | Sheet::HintInsideFace);
-    Sheet centreSheet(2, 2);
-    centreSheet.setHints(Sheet::HintDrawFold | Sheet::HintInsideFace | Sheet::HintCenterSpread);
+    Sheet centerSheet(2, 2);
+    centerSheet.setHints(Sheet::HintDrawFold | Sheet::HintInsideFace | Sheet::HintCenterSpread);
 
     TmpPdfFile tmp;
     for (int marks = 0; marks < 2; ++marks)
@@ -345,7 +345,7 @@ void TestPlicaPage::test_FoldSidesDrawn()
 
         check(outsideSheet, outside, "outside face");
         check(insideSheet,  inside,  "inside face");
-        check(centreSheet,  centre,  "centre spread");
+        check(centerSheet,  center,  "center spread");
     }
 
     project->setFoldLine(FoldLineNone);
@@ -409,7 +409,7 @@ void TestPlicaPage::test_UndoDeletePages()
 
 
 /************************************************
- * The chosen colour strokes both the line and the marks: it is set once, and
+ * The chosen color strokes both the line and the marks: it is set once, and
  * nothing after it sets another.
  ************************************************/
 void TestPlicaPage::test_FoldLineColor()
@@ -418,11 +418,11 @@ void TestPlicaPage::test_FoldLineColor()
                                                  letter, letter.adjusted(9, 9, -9, -9));
     QVERIFY2(s.startsWith("q\n1.000 0.000 0.200 RG\n"), qPrintable(s));
     QCOMPARE(s.count(" RG\n"), 1);
-    QVERIFY2(!s.contains(" G\n"), qPrintable("a gray stroke colour overrides the choice:\n" + s));
+    QVERIFY2(!s.contains(" G\n"), qPrintable("a gray stroke color overrides the choice:\n" + s));
 
-    // An invalid colour, e.g. a mangled setting, leaves the current one.
+    // An invalid color, e.g. a mangled setting, leaves the current one.
     project->setFoldLineColor(QColor(10, 20, 30));
-    project->setFoldLineColor(QColor("not a colour"));
+    project->setFoldLineColor(QColor("not a color"));
     QCOMPARE(project->foldLineColor(), QColor(10, 20, 30));
     project->setFoldLineColor(gray);
 }

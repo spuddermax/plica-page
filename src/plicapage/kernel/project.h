@@ -151,7 +151,7 @@ public:
     bool stitchMarks() const { return mStitchMarks; }
     /// Distance between stitch marks, in points.
     qreal stitchSpacing() const { return mStitchSpacing; }
-    /// Colour of the fold line and its stitch marks.
+    /// Color of the fold line and its stitch marks.
     QColor foldLineColor() const { return mFoldLineColor; }
 
     /**

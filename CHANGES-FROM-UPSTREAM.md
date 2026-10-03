@@ -46,10 +46,10 @@ dialogs - then offer them by name once restarted.
 
 ## 2026-10 — Does the whole job fit the printer?
 
-- The printable-area outline is coloured per page: green where the page lies
+- The printable-area outline is colored per page: green where the page lies
   within the printer's reach on the side it is printed on, red where it does
-  not. A booklet spread colours each half by its own page; other layouts
-  colour the sheet red if any of its pages is cut off.
+  not. A booklet spread colors each half by its own page; other layouts
+  color the sheet red if any of its pages is cut off.
 - A bar above the preview reports on the whole job. Green when every page
   fits; otherwise red, naming the pages cut off, the edge - top, bottom, left,
   right, or for a booklet the outer edge and the spine, as the page is seen in
@@ -170,23 +170,23 @@ overlay that never reached the paper.
   PDF export and the preview alike; the preview's own guide steps aside while a
   line is chosen. It goes through the middle of the gap between the two pages,
   so it follows the Internal margin and any unequal outer margins, and runs the
-  full width of the paper. Stitch marks spread out from the centre of the fold
+  full width of the paper. Stitch marks spread out from the center of the fold
   and stop where the pages end.
 - The line, with its marks when they are on, goes on all faces, only the inside
-  of each folded sheet (the stitch side), or only the centre spread of each
+  of each folded sheet (the stitch side), or only the center spread of each
   booklet, where the stitches pass through every sheet; other faces get no
   line. It is never drawn on the preview sheet that joins two sub-booklets,
   which has no fold. The layout tags printed sheets with new `HintInsideFace`
   and `HintCenterSpread` hints to tell them apart. A reading spread in the
   preview holds one page from an inside face and one from an outside face, so
-  the preview shows a "stitch side" line on every spread; only the centre
+  the preview shows a "stitch side" line on every spread; only the center
   spread is exact there.
 - The marks were first a fourth line style, "dotted with stitch marks", whose
   sides setting placed the marks alone. Settings saved that way carry over:
   `Stitched` becomes a dotted line with marks on, and the old
   `Project/StitchMarks` sides become `Project/FoldSides`.
-- The line and its marks are drawn in a colour the user picks (default 60%
-  gray, `Project/FoldLineColor`), set once as the stroke colour for both.
+- The line and its marks are drawn in a color the user picks (default 60%
+  gray, `Project/FoldLineColor`), set once as the stroke color for both.
 
 ## 2026-10 — Source page margins from the print dialog
 
@@ -218,7 +218,7 @@ roughly one launch in five with a large scanned document, taking the loaded jobs
 with it. Stock 3.0.0 does it too, so this is inherited rather than introduced
 here.
 
-The fault is in poppler, not in either program: its global colour-management
+The fault is in poppler, not in either program: its global color-management
 profiles are built lazily, without a guard, by whichever render arrives first.
 Two renders reaching that setup together corrupt the heap, and the abort surfaces
 later in `cmsCloseProfile` under `GfxState`'s constructor — often with every
@@ -259,7 +259,7 @@ account are in `poppler-crash-repro/`.
 Boomaga always scaled the *whole* source page into its cell on the sheet,
 margins included, which wastes paper on N-up and booklet layouts.
 
-- New `PageTrimmer` (`src/plicapage/kernel/pagetrimmer.{h,cpp}`) rasterises each
+- New `PageTrimmer` (`src/plicapage/kernel/pagetrimmer.{h,cpp}`) rasterizes each
   source page through poppler and finds its ink bounding box. Ink is grouped into
   connected blobs so isolated speckles and scanner lid shadows are rejected
   rather than pinning the box to the full page.
@@ -269,7 +269,7 @@ margins included, which wastes paper on N-up and booklet layouts.
   would otherwise silently rotate whole sheets.
 - `TmpPdfFile::getPageStream()` now emits a clipping path before drawing each
   page. Boomaga emitted none, so content outside the drawn box could bleed across
-  neighbouring cells — harmless at 1:1, not harmless once a page is scaled up.
+  neighboring cells — harmless at 1:1, not harmless once a page is scaled up.
 - Per-page and uniform trim modes, with configurable padding, in the main window.
 - `TmpPdfFile` now always writes a real page tree for the source pages. Upstream
   only did this behind the `BOOMAGAMERGER_DEBUGPAGES` environment variable, and
@@ -279,13 +279,13 @@ margins included, which wastes paper on N-up and booklet layouts.
 ## 2026-07 — Measurement units
 
 Upstream had a `Unit` enum with `UnitInch` commented out and a `mUnit` member
-threaded through the printer-margins dialog but hardcoded to millimetres.
+threaded through the printer-margins dialog but hardcoded to millimeters.
 
 - `UnitInch` enabled; conversions moved to `plicapagetypes.cpp` and exposed.
 - App-wide measurement-unit preference, defaulting from the system locale, which
   drives both the new trim padding control and the existing margins dialog (whose
   tab now retitles between "Margins (mm)" and "Margins (in)").
-- The millimetre ratio was derived from rounded A4 dimensions (842/297) and was
+- The millimeter ratio was derived from rounded A4 dimensions (842/297) and was
   0.02% off, which made a value drift visibly when switching units — 1.000 in
   came back as 0.999 in. Conversions are now exact.
 
@@ -320,17 +320,17 @@ type. Existing `.boo` files continue to open.
 ### Assets
 
 The application icon was **replaced**, not renamed. Boomaga's was a Flaticon
-image whose licence forbids "offering Flaticon Contents designs for download",
+image whose license forbids "offering Flaticon Contents designs for download",
 which is what publishing it in a source repository does. PlicaPage's icon is
-original work under the project licence. See
+original work under the project license. See
 `src/plicapage/misc/images/mainicon/AUTHORS.md`.
 
 The About dialog's "Thanks" tab, which carries the attribution the Icons8
-CC BY-ND licence requires, was hidden upstream (`setVisible(false)`). It is now
+CC BY-ND license requires, was hidden upstream (`setVisible(false)`). It is now
 shown.
 
 `PJL_Technical_Reference_Manual.pdf` (3 MB of HP's copyrighted manual, carried in
-the repo with no licence grant) was removed.
+the repo with no license grant) was removed.
 
 The macOS Sparkle `SUFeedURL` pointed at `boomaga.org`; it was removed rather
 than repointed, since this project has no update infrastructure.

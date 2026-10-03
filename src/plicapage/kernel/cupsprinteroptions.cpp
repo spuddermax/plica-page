@@ -66,7 +66,7 @@ static const ColorModeCase colorModeCases[] = {
 
 
 /************************************************
- * Both options are left empty if the PPD has no option we recognise, and the
+ * Both options are left empty if the PPD has no option we recognize, and the
  * color one is left empty if the option we matched can only name grayscale.
  * An empty option is simply not passed to lpr, which leaves the PPD's own
  * default in place - a better guess than any choice we could invent.

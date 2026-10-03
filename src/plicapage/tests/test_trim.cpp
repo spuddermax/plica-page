@@ -414,7 +414,7 @@ void TestPlicaPage::test_TrimScale()
 
 /************************************************
  * Scaling a trimmed page up would drag whatever sits outside the box across
- * its neighbours on the sheet, so the content stream has to clip.
+ * its neighbors on the sheet, so the content stream has to clip.
  ************************************************/
 void TestPlicaPage::test_TrimClip()
 {

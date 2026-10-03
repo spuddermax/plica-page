@@ -28,12 +28,12 @@
 //
 // Mirrors what render.cpp does - N threads, each with its OWN document,
 // rendering pages concurrently. If this crashes, the fault is in poppler (or
-// its lcms2 colour management), not in the application using it.
+// its lcms2 color management), not in the application using it.
 //
 // Build:
 //   g++ -O2 -std=c++11 popplerstress.cpp $(pkg-config --cflags --libs poppler-cpp) -pthread -o popplerstress
 // Run:
-//   ./popplerstress <file.pdf> <threads> <iterations> [serialise]
+//   ./popplerstress <file.pdf> <threads> <iterations> [serialize]
 
 #include <poppler-document.h>
 #include <poppler-image.h>
@@ -49,7 +49,7 @@
 #include <vector>
 
 static std::mutex gRenderMutex;
-static bool gSerialise = false;
+static bool gSerialize = false;
 
 static void worker(const std::string &path, int iterations, int seed)
 {
@@ -72,7 +72,7 @@ static void worker(const std::string &path, int iterations, int seed)
         if (!page)
             continue;
 
-        if (gSerialise)
+        if (gSerialize)
         {
             std::lock_guard<std::mutex> lock(gRenderMutex);
             poppler::image img = renderer.render_page(page.get(), 150, 150);
@@ -90,14 +90,14 @@ int main(int argc, char *argv[])
 {
     if (argc < 4)
     {
-        std::fprintf(stderr, "usage: %s <file.pdf> <threads> <iterations> [serialise]\n", argv[0]);
+        std::fprintf(stderr, "usage: %s <file.pdf> <threads> <iterations> [serialize]\n", argv[0]);
         return 2;
     }
 
     const std::string path = argv[1];
     const int threads    = std::atoi(argv[2]);
     const int iterations = std::atoi(argv[3]);
-    gSerialise = (argc > 4);
+    gSerialize = (argc > 4);
 
     std::vector<std::thread> pool;
     for (int t = 0; t < threads; ++t)

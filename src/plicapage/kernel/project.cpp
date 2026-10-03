@@ -1478,7 +1478,7 @@ void Project::setStitchMarks(bool value)
 
 
 /************************************************
- * An invalid colour, e.g. from a hand-edited settings file, is ignored.
+ * An invalid color, e.g. from a hand-edited settings file, is ignored.
  ************************************************/
 void Project::setFoldLineColor(const QColor &value)
 {
